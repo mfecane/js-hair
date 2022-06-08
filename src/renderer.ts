@@ -3,22 +3,15 @@ import { Vector3 } from 'three'
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
+import { map, smoothstep } from './lib'
 
 let scene = new THREE.Scene()
-const HELPERS = false
+const HELPERS = true
+let orbitControlState = true
 scene.background = new THREE.Color(0x999999)
 
-// tuple: x, y, z, radius
-const path = [
-  [0.2, 0, 0, 0.3],
-  [0, -1, 0.2, 0.3],
-  [0.2, -2, 0, 0.3],
-  [0, -3, 0.1, 0.3],
-  [0.1, -4, 0, 0.2],
-  [0, -5, 0.3, 0.1],
-]
-
-createMesh(path, scene)
+let paths = spawnPaths()
+paths.forEach((p) => createMesh(p, scene))
 
 const directionalLight = new THREE.DirectionalLight(0xffffdd, 0.3)
 
@@ -38,15 +31,15 @@ const camera = new THREE.PerspectiveCamera(
   2000
 )
 
-camera.position.set(0, 0, 2)
-camera.lookAt(0, 0, 0)
+camera.position.set(0, -0.5, 1)
+camera.lookAt(0, -0.5, 0)
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 const controls = new OrbitControls(camera, renderer.domElement)
 
-controls.minDistance = 9
-controls.maxDistance = 22
-controls.target.set(0, 0, 0)
+controls.minDistance = 0.5
+controls.maxDistance = 5
+controls.target.set(0, -0.5, 0)
 controls.enableDamping = true
 controls.zoomSpeed = 0.5
 
@@ -70,6 +63,89 @@ document.body.appendChild(renderer.domElement)
 //   var dot = new THREE.Points(dotGeometry, dotMaterial)
 //   scene.add(dot)
 // }
+
+function toggleOrbitControls(state) {
+  if (typeof state !== 'undefined') {
+    orbitControlState = state
+  } else {
+    orbitControlState = !orbitControlState
+  }
+
+  if (orbitControlState) {
+    // TODO :: do something
+  }
+}
+
+function mapWidth(t, maxWidth) {
+  const root = 0.2
+  if (t < root) {
+    return maxWidth * map(t, 0, root, 0.5, 1.0)
+  }
+  const tip = 0.3
+  if (t > 1 - tip) {
+    return maxWidth * map(t, 1 - tip, 1, 1, 0.3)
+  }
+
+  return maxWidth
+}
+
+function mapElev(t, height) {
+  const tip = 0.12
+  if (t < tip) {
+    return height * Math.sqrt(t / tip)
+  }
+  return height
+}
+
+function spawnPaths() {
+  const MAX_ORIGINS = 1000
+  const SEGMENTS = 40
+  const width = 0.001
+  const LENGTH = 1
+  let origins = []
+  const maxd = 0.01
+  const BASE = 0.2
+  const ELEVATION = 0.05
+
+  for (let i = 0; i < MAX_ORIGINS; ++i) {
+    const originShift = 0.01
+    const vSteps = 5
+    const v = i % vSteps
+    const h = i / vSteps
+    const x = (BASE / MAX_ORIGINS) * h * vSteps
+    const y = originShift * v + Math.random() * originShift
+    origins.push([x, y, 0])
+  }
+
+  origins = origins.filter(() => {
+    return Math.random() < 0.2
+  })
+
+  let paths = origins.map((o) => {
+    let path = []
+    let point = [o[0], o[1], o[2], width]
+    path.push(point)
+    const freq1 = Math.random() * 20 + 5
+    const freq2 = Math.random() * 20 + 5
+    const elev = Math.random() * ELEVATION
+
+    for (let i = 0; i < SEGMENTS; ++i) {
+      const t = i / SEGMENTS
+
+      point = [
+        o[0] + Math.sin(freq1 * t) * maxd,
+        o[1] - t * LENGTH,
+        o[2] + Math.sin(freq2 * t) * maxd + mapElev(t, elev),
+        mapWidth(t, width),
+      ]
+      path.push(point)
+    }
+
+    return path
+  })
+
+  return paths
+}
 
 function createMesh(path, scene: THREE.Scene) {
   const geo = new THREE.BufferGeometry()
@@ -108,11 +184,21 @@ function createMesh(path, scene: THREE.Scene) {
       dir = new THREE.Vector3().addVectors(dir1, dir2)
     }
 
+    if (HELPERS) {
+      // const arrowHelper = new THREE.ArrowHelper(
+      //   dir?.normalize(),
+      //   new Vector3(0, 0, 1).add(point),
+      //   0.4
+      // )
+      // scene.add(arrowHelper)
+    }
+
     // two base vectors
     let v1 = new Vector3().crossVectors(dir, new Vector3(1, 0, 0)).normalize()
     let v2 = new Vector3().crossVectors(dir, v1).normalize()
 
     // TODO ::: optimize
+    // TODO ::: cache dirs, optimize
     for (let i = 0; i < numPoints; ++i) {
       let vert = new Vector3()
         .addVectors(
@@ -187,6 +273,7 @@ function createMesh(path, scene: THREE.Scene) {
   )
   geo.computeVertexNormals()
 
+  // TODO ::: dont copy material
   const material = new THREE.MeshPhongMaterial()
 
   const mesh = new THREE.Mesh(geo, material)
@@ -194,10 +281,12 @@ function createMesh(path, scene: THREE.Scene) {
   scene.add(mesh)
 
   if (HELPERS) {
-    const helper = new VertexNormalsHelper(mesh, 0.1, 0x00ff00)
-    scene.add(helper)
-
+    // const helper = new VertexNormalsHelper(mesh, 0.1, 0x00ff00)
+    // scene.add(helper)
     const axesHelper = new THREE.AxesHelper(0.5)
+    // r - x
+    // g - y
+    // b - z
     scene.add(axesHelper)
   }
 }
