@@ -1,6 +1,7 @@
 import { map, mapclamp, smoothstep } from './lib'
 import * as THREE from 'three'
 import { Vector3 } from 'three'
+import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 
 // TODO ::: add createSpline
 
@@ -34,9 +35,11 @@ export class HairGenerator {
   width = 0.0005
   density = 0.5
   clampCount = 5
+  // scene: THREE.Scene | null
 
   constructor(options: HairGeneratorOptions) {
     this.rect = options.rect
+    // this.scene = scene
 
     this.density = options.density || this.density
     this.clampCount = options.clampCount || this.clampCount
@@ -165,7 +168,7 @@ export class HairGenerator {
     const freq1 = Math.random() * 20 + 5
     const freq2 = Math.random() * 20 + 5
     const elev = Math.random() * this.ELEVATION
-    const len = this.rect.h * (0.96 - Math.random() * 0.1)
+    const len = this.rect.h * (0.96 - Math.random() * 0.4)
 
     for (let i = 0; i < this.SEGMENTS - 1; ++i) {
       const t = i / this.SEGMENTS
@@ -208,10 +211,6 @@ export class HairGenerator {
     return this.clamps.flat()
   }
 
-  addToScene() {
-    // TODO ::: implemnent
-  }
-
   createMeshes() {
     // const materials = [
     //   new THREE.MeshDepthMaterial({ color: 0xbbbbbb }),
@@ -229,15 +228,13 @@ export class HairGenerator {
       new THREE.MeshPhongMaterial({ color: 0xffffff }),
     ]
 
-    // const helper = new VertexNormalsHelper(mesh, 0.1, 0x00ff00)
-    // scene.add(helper)
-
     const geos = this.clamps.flat().map((p) => this.createGeo(p))
     const meshes = geos.map((geo) => {
       const k = Math.floor(Math.random() * 5)
       const mat = materials[k]
       const mesh = new THREE.Mesh(geo, mat)
-      console.log(mat.color)
+      // const helper = new VertexNormalsHelper(mesh, 0.05, 0x00ff00)
+      // this.scene.add(helper)
       return mesh
     })
     return meshes
@@ -247,8 +244,10 @@ export class HairGenerator {
     const geo = new THREE.BufferGeometry()
 
     const vertices = []
+    const uvs = []
+    const normals = []
     const numPoints = 8
-    const step = (2 * Math.PI) / numPoints
+    const angleStep = (2 * Math.PI) / numPoints
     const numLayers = path.length
 
     for (let j = 0; j < numLayers; ++j) {
@@ -296,18 +295,29 @@ export class HairGenerator {
       let v1 = new Vector3().crossVectors(dir, new Vector3(1, 0, 0)).normalize()
       let v2 = new Vector3().crossVectors(dir, v1).normalize()
 
+      // check vectors
+      // console.log('v1.length()', v1.length())
+      // console.log('v2.length()', v2.length())
+      // console.log('v1.dot(v2)', v1.dot(v2))
+
       // TODO ::: optimize
       // TODO ::: cache dirs, optimize
-      for (let i = 0; i < numPoints; ++i) {
-        let vert = new Vector3()
-          .addVectors(
-            v1.clone().multiplyScalar(radius * Math.cos(step * i)),
-            v2.clone().multiplyScalar(radius * Math.sin(step * i))
-          )
-          .add(point)
+
+      // diplicate seam vertices
+      for (let i = 0; i < numPoints + 1; ++i) {
+        let normal = new Vector3().addVectors(
+          v1.clone().multiplyScalar(Math.cos(angleStep * i)),
+          v2.clone().multiplyScalar(Math.sin(angleStep * i))
+        )
+
+        let vert = normal.clone().multiplyScalar(radius).add(point)
         vertices.push([vert.x, vert.y, vert.z])
-        // let vert = new THREE.Vector3().addVectors(baseVert, new Vector3(radius * Math.cos(step * i), 0, radius * Math.sin(step * i)))
-        // vertices.push([vert.x, vert.y, vert.z])
+
+        const u = map(i / numPoints, 0, 1, 0.01, 0.99)
+        const v = map(j / (numLayers - 1), 0, 1, 0.01, 0.99)
+        uvs.push([u, v])
+
+        normals.push(normal.toArray())
       }
     }
 
@@ -320,25 +330,6 @@ export class HairGenerator {
     ) => {
       const arr = []
       let a, b, c
-
-      // should wrap
-      if (index === numPoints - 1) {
-        // tri #1
-        a = layer * numPoints + index
-        b = layer * numPoints + 0
-        c = (layer + 1) * numPoints + index
-
-        arr.push(a, b, c)
-
-        // tri #2
-        a = layer * numPoints + 0
-        b = (layer + 1) * numPoints + 0
-        c = (layer + 1) * numPoints + index
-
-        arr.push(a, b, c)
-
-        return arr
-      }
 
       // tri #1
       a = layer * numPoints + index
@@ -359,7 +350,7 @@ export class HairGenerator {
 
     for (let j = 0; j < numLayers - 1; ++j) {
       for (let i = 0; i < numPoints; ++i) {
-        indices.push(getIndiciForLayer(i, j, numPoints))
+        indices.push(getIndiciForLayer(i, j, numPoints + 1))
       }
     }
 
@@ -370,7 +361,11 @@ export class HairGenerator {
       'position',
       new THREE.Float32BufferAttribute(vertices.flat(), 3)
     )
-    geo.computeVertexNormals()
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs.flat(), 2))
+    geo.setAttribute(
+      'normal',
+      new THREE.Float32BufferAttribute(normals.flat(), 3)
+    )
     return geo
   }
 }

@@ -5,6 +5,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import { HairGenerator } from './hair-generator'
 import { map, smoothstep } from './lib'
+import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
+import { saveAs } from 'file-saver'
 
 let scene = new THREE.Scene()
 const HELPERS = true
@@ -28,7 +30,7 @@ let card1 = new HairGenerator({
     w: 0.2,
     h: 1,
   },
-  density: 0.5,
+  density: 0.4,
 })
 meshes.push(card1.createMeshes())
 
@@ -126,18 +128,22 @@ camera.lookAt(0.5, 0.5, 0)
 const orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.1, 0.1)
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
-// const controls = new OrbitControls(camera, renderer.domElement)
+const controls = new OrbitControls(camera, renderer.domElement)
 
-// controls.minDistance = 0.5
-// controls.maxDistance = 5
-// controls.target.set(0.5, 0.5, 0)
-// controls.enableDamping = true
-// controls.zoomSpeed = 0.5
+controls.minDistance = 0.5
+controls.maxDistance = 5
+controls.target.set(0.5, 0.5, 0)
+controls.enableDamping = true
+controls.zoomSpeed = 0.5
 
 renderer.setPixelRatio(window.devicePixelRatio)
 renderer.setSize(window.innerWidth, window.innerHeight)
 
 animate()
+
+window.setTimeout(() => {
+  exportObj()
+}, 1000)
 
 document.body.appendChild(renderer.domElement)
 
@@ -155,6 +161,13 @@ document.body.appendChild(renderer.domElement)
 //   scene.add(dot)
 // }
 
+function exportObj() {
+  const exporter = new OBJExporter()
+  const data = exporter.parse(scene)
+  var blob = new Blob([data], { type: 'text/plain' })
+  saveAs(blob, 'model.obj')
+}
+
 function toggleOrbitControls(state) {
   if (typeof state !== 'undefined') {
     orbitControlState = state
@@ -168,8 +181,8 @@ function toggleOrbitControls(state) {
 }
 
 function render() {
-  // renderer.render(scene, camera)
-  renderer.render(scene, orthoCamera)
+  renderer.render(scene, camera)
+  // renderer.render(scene, orthoCamera)
 }
 
 function animate() {
@@ -179,6 +192,6 @@ function animate() {
   //   camera.position.y,
   //   camera.position.z
   // )
-  // controls.update()
+  controls.update()
   render()
 }
