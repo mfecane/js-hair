@@ -1,6 +1,6 @@
 import './null.scss'
 import './styles.scss'
-import './renderer'
+import './scene'
 
 import { createRoot } from 'react-dom/client'
 import App from 'components/app'

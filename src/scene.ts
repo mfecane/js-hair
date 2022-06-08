@@ -6,24 +6,40 @@ import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHel
 import { HairGenerator } from './hair-generator'
 import { map, smoothstep } from './lib'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import { saveAs } from 'file-saver'
+
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
+
+export type CameraState = 'ortho' | 'persp'
+
+const HELPERS = true
 
 let element: HTMLDivElement
 let scene = new THREE.Scene()
+let composer: EffectComposer
 let group = new THREE.Group()
-scene.add(group)
+let width: number
+let height: number
+let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera
+let lastCameraPos = new THREE.Vector3(0, 0, 0)
 let controls: OrbitControls | null
-const HELPERS = true
-export type CameraState = 'ortho' | 'persp'
 let cameraState: CameraState = 'ortho'
+
+scene.add(group)
 scene.background = new THREE.Color(0x999999)
 
+// add plane
 const geometry = new THREE.PlaneGeometry(1, 1)
 const material = new THREE.MeshBasicMaterial({
   color: 0x666666,
   side: THREE.DoubleSide,
 })
 const plane = new THREE.Mesh(geometry, material)
+plane.name = 'Plane'
 plane.position.set(0.5, 0.5, 0.0)
 scene.add(plane)
 
@@ -42,10 +58,10 @@ directionalLight.position.set(1.0, 1.0, 1.0)
 // scene.add(directionalLightHelper)
 scene.add(directionalLight)
 
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000)
+const perspCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000)
 
-camera.position.set(0.5, 0.5, 2)
-camera.lookAt(0.5, 0.5, 0)
+perspCamera.position.set(0.5, 0.5, 2)
+perspCamera.lookAt(0.5, 0.5, 0)
 
 const orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.1, 0.1)
 
@@ -54,6 +70,10 @@ const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setPixelRatio(window.devicePixelRatio)
 // renderer.setSize(window.innerWidth, window.innerHeight)
 window.addEventListener('resize', updateSize)
+
+camera = orthoCamera
+composer = new EffectComposer(renderer)
+composer.addPass(new RenderPass(scene, camera))
 
 init()
 
@@ -93,29 +113,76 @@ export function exportObj() {
   })
 }
 
+export function exportGLTF() {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const exporter = new GLTFExporter()
+      exporter.parse(
+        scene,
+        (gltf) => {
+          debugger
+          var blob = new Blob([JSON.stringify(gltf)], { type: 'text/plain' })
+          saveAs(blob, 'model.gltf')
+          resolve(null)
+        },
+        (err) => {
+          reject(err)
+        },
+        {}
+      )
+    }, 100)
+  })
+}
+
 export function toggleCameraState(state: CameraState) {
   if (cameraState === state) {
     return
   }
 
   cameraState = state
+  createComposer()
 
-  if (cameraState === 'persp') {
-    if (!controls) {
-      createOrbitControls()
+  if (cameraState === 'ortho') {
+    if (controls) {
+      controls.dispose()
+      controls = null
     }
+    camera = orthoCamera
+    return
   }
+
+  if (!controls) {
+    createOrbitControls()
+  }
+  camera = perspCamera
 }
 
 function updateSize() {
-  camera.updateProjectionMatrix()
+  perspCamera.updateProjectionMatrix()
   const rect = element.getBoundingClientRect()
   const min = Math.min(rect.width, rect.height)
+  width = min
+  height = min
   renderer.setSize(min, min)
+  createComposer()
+}
+
+function createComposer() {
+  composer = new EffectComposer(renderer)
+  composer.setSize(width, height)
+
+  composer = new EffectComposer(renderer)
+  composer.addPass(new RenderPass(scene, camera))
+
+  const pass = new SMAAPass(
+    width * renderer.getPixelRatio(),
+    height * renderer.getPixelRatio()
+  )
+  composer.addPass(pass)
 }
 
 function createOrbitControls() {
-  controls = new OrbitControls(camera, renderer.domElement)
+  controls = new OrbitControls(perspCamera, renderer.domElement)
   controls.minDistance = 0.5
   controls.maxDistance = 5
   controls.target.set(0.5, 0.5, 0)
@@ -123,25 +190,43 @@ function createOrbitControls() {
   controls.zoomSpeed = 0.5
 }
 
+function compareRound(a: number, b: number) {
+  return Math.abs(a - b) < 0.001
+}
+
+function cameraChanged(a: number, b: number) {
+  let res: boolean
+  if (
+    compareRound(lastCameraPos.x, perspCamera.position.x) &&
+    compareRound(lastCameraPos.y, perspCamera.position.y) &&
+    compareRound(lastCameraPos.z, perspCamera.position.z)
+  ) {
+    res = true
+  } else {
+    res = false
+  }
+
+  lastCameraPos = perspCamera.position.clone()
+  return res
+}
+
 function render() {
-  if (cameraState === 'ortho') {
-    renderer.render(scene, orthoCamera)
-    if (controls) {
-      controls.dispose()
-      controls = null
-    }
+  if (cameraState === 'persp' && controls) {
+    controls.update()
   }
-  if (cameraState === 'persp') {
-    renderer.render(scene, camera)
-    if (controls) {
-      controls.update()
-    }
-  }
+  composer.render()
 }
 
 function init() {
   createOrbitControls()
+  createComposer()
   animate()
+}
+
+function animate() {
+  requestAnimationFrame(animate)
+  controls?.update()
+  render()
 }
 
 export function generateHair() {
@@ -242,10 +327,4 @@ export function generateHair() {
     })
     resolve(null)
   })
-}
-
-function animate() {
-  requestAnimationFrame(animate)
-  controls?.update()
-  render()
 }

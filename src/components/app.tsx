@@ -17,10 +17,11 @@ import LoadingButton from '@mui/lab/LoadingButton'
 
 import {
   CameraState,
+  exportGLTF,
   exportObj,
   generateHair,
   toggleCameraState,
-} from 'src/renderer'
+} from 'src/scene'
 
 const App: React.FC = () => {
   const [cameraState, setCameraState] = useState('ortho')
@@ -35,7 +36,7 @@ const App: React.FC = () => {
 
   const handleExport = () => {
     setLoading(true)
-    exportObj().then(() => {
+    exportGLTF().then(() => {
       setLoading(false)
     })
   }
@@ -87,7 +88,7 @@ const App: React.FC = () => {
               variant="outlined"
               onClick={handleExport}
             >
-              Export OBJ
+              Export GLTF
             </LoadingButton>
           </FormControl>
         </Stack>

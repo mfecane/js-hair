@@ -25,6 +25,14 @@ interface HairGeneratorOptions {
   width?: number
 }
 
+const standardMaterials = [
+  new THREE.MeshStandardMaterial({ color: 0xbbbbbb }),
+  new THREE.MeshStandardMaterial({ color: 0xcccccc }),
+  new THREE.MeshStandardMaterial({ color: 0xdddddd }),
+  new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
+  new THREE.MeshStandardMaterial({ color: 0xffffff }),
+]
+
 export class HairGenerator {
   clamps: HairPoint[][][] = []
   rect: Rect
@@ -52,7 +60,7 @@ export class HairGenerator {
     let origins: [number, number, number][][] = []
 
     for (let i = 0; i < this.MAX_ORIGINS; ++i) {
-      const originShift = 0.01
+      const originShift = 0.005
       const vSteps = 5
       const v = i % vSteps // vertical index 0 - vSteps
       const h = i / vSteps // horizontal index 0 - this.MAX_ORIGINS / vSteps
@@ -132,7 +140,7 @@ export class HairGenerator {
 
     // clamp modifier
     paths.forEach((p) => {
-      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.3, 0.7, 0.6))
+      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.1, 0.7, 0.6))
     })
 
     return paths
@@ -220,19 +228,12 @@ export class HairGenerator {
     //   new THREE.MeshDepthMaterial({ color: 0xffffff }),
     // ]
 
-    const materials = [
-      new THREE.MeshPhongMaterial({ color: 0xbbbbbb }),
-      new THREE.MeshPhongMaterial({ color: 0xcccccc }),
-      new THREE.MeshPhongMaterial({ color: 0xdddddd }),
-      new THREE.MeshPhongMaterial({ color: 0xeeeeee }),
-      new THREE.MeshPhongMaterial({ color: 0xffffff }),
-    ]
-
     const geos = this.clamps.flat().map((p) => this.createGeo(p))
-    const meshes = geos.map((geo) => {
+    const meshes = geos.map((geo, index) => {
       const k = Math.floor(Math.random() * 5)
-      const mat = materials[k]
+      const mat = standardMaterials[k]
       const mesh = new THREE.Mesh(geo, mat)
+      mesh.name = `hair_${index}`
       // const helper = new VertexNormalsHelper(mesh, 0.05, 0x00ff00)
       // this.scene.add(helper)
       return mesh

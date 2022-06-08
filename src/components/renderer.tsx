@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { mount } from 'src/renderer'
+import { mount } from 'src/scene'
 
 import './renderer.scss'
 
