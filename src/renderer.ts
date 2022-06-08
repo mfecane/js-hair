@@ -3,6 +3,7 @@ import { Vector3 } from 'three'
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
+import { HairGenerator } from './hair-generator'
 import { map, smoothstep } from './lib'
 
 let scene = new THREE.Scene()
@@ -10,8 +11,98 @@ const HELPERS = true
 let orbitControlState = true
 scene.background = new THREE.Color(0x999999)
 
-let paths = spawnPaths()
+const geometry = new THREE.PlaneGeometry(1, 1)
+const material = new THREE.MeshBasicMaterial({
+  color: 0x666666,
+  side: THREE.DoubleSide,
+})
+const plane = new THREE.Mesh(geometry, material)
+plane.position.set(0.5, 0.5, 0.0)
+scene.add(plane)
+
+let card1 = new HairGenerator({
+  rect: {
+    x: 0.01,
+    y: 0.99,
+    w: 0.2,
+    h: 1,
+  },
+  density: 0.5,
+})
+let paths = card1.getPaths()
 paths.forEach((p) => createMesh(p, scene))
+
+let card2 = new HairGenerator({
+  rect: {
+    x: 0.23,
+    y: 0.99,
+    w: 0.2,
+    h: 1,
+  },
+  density: 0.3,
+})
+let paths2 = card2.getPaths()
+paths2.forEach((p) => createMesh(p, scene))
+
+let card3 = new HairGenerator({
+  rect: {
+    x: 0.45,
+    y: 0.99,
+    w: 0.15,
+    h: 1,
+  },
+  density: 0.2,
+})
+let paths3 = card3.getPaths()
+paths3.forEach((p) => createMesh(p, scene))
+
+let card4 = new HairGenerator({
+  rect: {
+    x: 0.63,
+    y: 0.99,
+    w: 0.1,
+    h: 1,
+  },
+  density: 0.1,
+})
+let paths4 = card4.getPaths()
+paths4.forEach((p) => createMesh(p, scene))
+
+let card5 = new HairGenerator({
+  rect: {
+    x: 0.76,
+    y: 0.99,
+    w: 0.05,
+    h: 1,
+  },
+  density: 0.05,
+})
+let paths5 = card5.getPaths()
+paths5.forEach((p) => createMesh(p, scene))
+
+let card6 = new HairGenerator({
+  rect: {
+    x: 0.86,
+    y: 0.99,
+    w: 0.05,
+    h: 1,
+  },
+  density: 0.02,
+})
+let paths6 = card6.getPaths()
+paths6.forEach((p) => createMesh(p, scene))
+
+let card7 = new HairGenerator({
+  rect: {
+    x: 0.94,
+    y: 0.99,
+    w: 0.05,
+    h: 1,
+  },
+  density: 0.01,
+})
+let paths7 = card7.getPaths()
+paths7.forEach((p) => createMesh(p, scene))
 
 const directionalLight = new THREE.DirectionalLight(0xffffdd, 0.3)
 
@@ -31,15 +122,17 @@ const camera = new THREE.PerspectiveCamera(
   2000
 )
 
-camera.position.set(0, -0.5, 1)
-camera.lookAt(0, -0.5, 0)
+camera.position.set(0.5, -0.5, 2)
+camera.lookAt(0.5, -0.5, 0)
+
+const orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 0.5)
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 const controls = new OrbitControls(camera, renderer.domElement)
 
 controls.minDistance = 0.5
 controls.maxDistance = 5
-controls.target.set(0, -0.5, 0)
+controls.target.set(0.5, -0.5, 0)
 controls.enableDamping = true
 controls.zoomSpeed = 0.5
 
@@ -76,77 +169,6 @@ function toggleOrbitControls(state) {
   }
 }
 
-function mapWidth(t, maxWidth) {
-  const root = 0.2
-  if (t < root) {
-    return maxWidth * map(t, 0, root, 0.5, 1.0)
-  }
-  const tip = 0.3
-  if (t > 1 - tip) {
-    return maxWidth * map(t, 1 - tip, 1, 1, 0.3)
-  }
-
-  return maxWidth
-}
-
-function mapElev(t, height) {
-  const tip = 0.12
-  if (t < tip) {
-    return height * Math.sqrt(t / tip)
-  }
-  return height
-}
-
-function spawnPaths() {
-  const MAX_ORIGINS = 1000
-  const SEGMENTS = 40
-  const width = 0.001
-  const LENGTH = 1
-  let origins = []
-  const maxd = 0.01
-  const BASE = 0.2
-  const ELEVATION = 0.05
-
-  for (let i = 0; i < MAX_ORIGINS; ++i) {
-    const originShift = 0.01
-    const vSteps = 5
-    const v = i % vSteps
-    const h = i / vSteps
-    const x = (BASE / MAX_ORIGINS) * h * vSteps
-    const y = originShift * v + Math.random() * originShift
-    origins.push([x, y, 0])
-  }
-
-  origins = origins.filter(() => {
-    return Math.random() < 0.2
-  })
-
-  let paths = origins.map((o) => {
-    let path = []
-    let point = [o[0], o[1], o[2], width]
-    path.push(point)
-    const freq1 = Math.random() * 20 + 5
-    const freq2 = Math.random() * 20 + 5
-    const elev = Math.random() * ELEVATION
-
-    for (let i = 0; i < SEGMENTS; ++i) {
-      const t = i / SEGMENTS
-
-      point = [
-        o[0] + Math.sin(freq1 * t) * maxd,
-        o[1] - t * LENGTH,
-        o[2] + Math.sin(freq2 * t) * maxd + mapElev(t, elev),
-        mapWidth(t, width),
-      ]
-      path.push(point)
-    }
-
-    return path
-  })
-
-  return paths
-}
-
 function createMesh(path, scene: THREE.Scene) {
   const geo = new THREE.BufferGeometry()
 
@@ -157,24 +179,29 @@ function createMesh(path, scene: THREE.Scene) {
 
   for (let j = 0; j < numLayers; ++j) {
     // get direction
+
     let dir1, dir2, dir
-    let point = new THREE.Vector3(path[j][0], path[j][1], path[j][2])
-    let radius = path[j][3]
+    let point = new THREE.Vector3(
+      path[j].pos[0],
+      path[j].pos[1],
+      path[j].pos[2]
+    )
+    let radius = path[j].width
 
     if (j > 0) {
       let prev = new THREE.Vector3(
-        path[j - 1][0],
-        path[j - 1][1],
-        path[j - 1][2]
+        path[j - 1].pos[0],
+        path[j - 1].pos[1],
+        path[j - 1].pos[2]
       )
       dir1 = new THREE.Vector3().subVectors(point, prev)
     }
 
     if (j < numLayers - 1) {
       let next = new THREE.Vector3(
-        path[j + 1][0],
-        path[j + 1][1],
-        path[j + 1][2]
+        path[j + 1].pos[0],
+        path[j + 1].pos[1],
+        path[j + 1].pos[2]
       )
       dir2 = new THREE.Vector3().subVectors(next, point)
     }
@@ -283,16 +310,16 @@ function createMesh(path, scene: THREE.Scene) {
   if (HELPERS) {
     // const helper = new VertexNormalsHelper(mesh, 0.1, 0x00ff00)
     // scene.add(helper)
-    const axesHelper = new THREE.AxesHelper(0.5)
+    // const axesHelper = new THREE.AxesHelper(0.5)
+    // scene.add(axesHelper)
     // r - x
     // g - y
     // b - z
-    scene.add(axesHelper)
   }
 }
 
 function render() {
-  renderer.render(scene, camera)
+  renderer.render(scene, orthoCamera)
 }
 
 function animate() {
