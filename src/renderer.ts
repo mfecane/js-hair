@@ -1,13 +1,24 @@
 import * as THREE from 'three'
+import { Vector3 } from 'three'
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 
-const scene = new THREE.Scene()
+let scene = new THREE.Scene()
 const HELPERS = false
 scene.background = new THREE.Color(0x999999)
 
-createMesh(scene)
+// tuple: x, y, z, radius
+const path = [
+  [0.2, 0, 0, 0.3],
+  [0, -1, 0.2, 0.3],
+  [0.2, -2, 0, 0.3],
+  [0, -3, 0.1, 0.3],
+  [0.1, -4, 0, 0.2],
+  [0, -5, 0.3, 0.1],
+]
+
+createMesh(path, scene)
 
 const directionalLight = new THREE.DirectionalLight(0xffffdd, 0.3)
 
@@ -46,23 +57,72 @@ animate()
 
 document.body.appendChild(renderer.domElement)
 
-function createMesh(scene: THREE.Scene) {
+// function drawDot(vec: Vector3) {
+//   var dotGeometry = new THREE.BufferGeometry()
+//   dotGeometry.setAttribute(
+//     'position',
+//     new THREE.Float32BufferAttribute([vec.x, vec.y, vec.z], 3)
+//   )
+//   var dotMaterial = new THREE.PointsMaterial({
+//     size: 4,
+//     sizeAttenuation: false,
+//   })
+//   var dot = new THREE.Points(dotGeometry, dotMaterial)
+//   scene.add(dot)
+// }
+
+function createMesh(path, scene: THREE.Scene) {
   const geo = new THREE.BufferGeometry()
 
   const vertices = []
   const numPoints = 8
   const step = (2 * Math.PI) / numPoints
-  const radius = 0.2
-  const numLayers = 20
-  const layerHeight = 0.5
+  const numLayers = path.length
 
   for (let j = 0; j < numLayers; ++j) {
-    for (let i = 0; i < numPoints; ++i) {
-      vertices.push(
-        radius * Math.cos(step * i),
-        -layerHeight * j,
-        radius * Math.sin(step * i)
+    // get direction
+    let dir1, dir2, dir
+    let point = new THREE.Vector3(path[j][0], path[j][1], path[j][2])
+    let radius = path[j][3]
+
+    if (j > 0) {
+      let prev = new THREE.Vector3(
+        path[j - 1][0],
+        path[j - 1][1],
+        path[j - 1][2]
       )
+      dir1 = new THREE.Vector3().subVectors(point, prev)
+    }
+
+    if (j < numLayers - 1) {
+      let next = new THREE.Vector3(
+        path[j + 1][0],
+        path[j + 1][1],
+        path[j + 1][2]
+      )
+      dir2 = new THREE.Vector3().subVectors(next, point)
+    }
+
+    dir = dir1 || dir2
+    if (dir1 && dir2) {
+      dir = new THREE.Vector3().addVectors(dir1, dir2)
+    }
+
+    // two base vectors
+    let v1 = new Vector3().crossVectors(dir, new Vector3(1, 0, 0)).normalize()
+    let v2 = new Vector3().crossVectors(dir, v1).normalize()
+
+    // TODO ::: optimize
+    for (let i = 0; i < numPoints; ++i) {
+      let vert = new Vector3()
+        .addVectors(
+          v1.clone().multiplyScalar(radius * Math.cos(step * i)),
+          v2.clone().multiplyScalar(radius * Math.sin(step * i))
+        )
+        .add(point)
+      vertices.push([vert.x, vert.y, vert.z])
+      // let vert = new THREE.Vector3().addVectors(baseVert, new Vector3(radius * Math.cos(step * i), 0, radius * Math.sin(step * i)))
+      // vertices.push([vert.x, vert.y, vert.z])
     }
   }
 
@@ -121,11 +181,14 @@ function createMesh(scene: THREE.Scene) {
   indices = indices.flat()
 
   geo.setIndex(indices)
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+  geo.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(vertices.flat(), 3)
+  )
+  geo.computeVertexNormals()
 
   const material = new THREE.MeshPhongMaterial()
 
-  geo.computeVertexNormals()
   const mesh = new THREE.Mesh(geo, material)
 
   scene.add(mesh)
