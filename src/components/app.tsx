@@ -20,11 +20,13 @@ import {
   exportGLTF,
   exportObj,
   generateHair,
+  getMeshes,
   toggleCameraState,
 } from 'src/scene'
+import { addMeshes, createScene, render } from 'src/renderer'
 
 const App: React.FC = () => {
-  const [cameraState, setCameraState] = useState('ortho')
+  const [cameraState, setCameraState] = useState('persp')
   const [loading, setLoading] = useState(false)
   const [loading2, setLoading2] = useState(false)
 
@@ -48,6 +50,15 @@ const App: React.FC = () => {
     })
   }
 
+  const handleExportTexture = () => {
+    generateHair().then(() => {
+      const meshes = getMeshes()
+      createScene()
+      addMeshes(meshes)
+      render()
+    })
+  }
+
   return (
     <div className="app-container">
       <Renderer />
@@ -62,14 +73,14 @@ const App: React.FC = () => {
               onChange={handleChangeCamera}
             >
               <FormControlLabel
-                value="ortho"
-                control={<Radio />}
-                label="Orthographic"
-              />
-              <FormControlLabel
                 value="persp"
                 control={<Radio />}
                 label="Perspective"
+              />
+              <FormControlLabel
+                value="ortho"
+                control={<Radio />}
+                label="Orthographic"
               />
             </RadioGroup>
           </FormControl>
@@ -89,6 +100,15 @@ const App: React.FC = () => {
               onClick={handleExport}
             >
               Export GLTF
+            </LoadingButton>
+          </FormControl>
+          <FormControl>
+            <LoadingButton
+              loading={loading}
+              variant="outlined"
+              onClick={handleExportTexture}
+            >
+              Export Texture
             </LoadingButton>
           </FormControl>
         </Stack>

@@ -14,7 +14,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 
-export type CameraState = 'ortho' | 'persp'
+export type CameraState = 'persp' | 'ortho'
 
 const HELPERS = true
 
@@ -27,7 +27,7 @@ let height: number
 let camera: THREE.PerspectiveCamera | THREE.OrthographicCamera
 let lastCameraPos = new THREE.Vector3(0, 0, 0)
 let controls: OrbitControls | null
-let cameraState: CameraState = 'ortho'
+let cameraState: CameraState = 'persp'
 
 scene.add(group)
 scene.background = new THREE.Color(0x999999)
@@ -71,7 +71,7 @@ renderer.setPixelRatio(window.devicePixelRatio)
 // renderer.setSize(window.innerWidth, window.innerHeight)
 window.addEventListener('resize', updateSize)
 
-camera = orthoCamera
+camera = perspCamera
 composer = new EffectComposer(renderer)
 composer.addPass(new RenderPass(scene, camera))
 
@@ -221,6 +221,7 @@ function init() {
   createOrbitControls()
   createComposer()
   animate()
+  generateHair()
 }
 
 function animate() {
@@ -315,7 +316,7 @@ export function generateHair() {
       rect: {
         x: 0.94,
         y: 0.99,
-        w: 0.05,
+        w: 0.03,
         h: 1,
       },
       density: 0.01,
@@ -327,4 +328,8 @@ export function generateHair() {
     })
     resolve(null)
   })
+}
+
+export function getMeshes() {
+  return meshes
 }
