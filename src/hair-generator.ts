@@ -25,6 +25,14 @@ interface HairGeneratorOptions {
   width?: number
 }
 
+const standardMaterials = [
+  new THREE.MeshStandardMaterial({ color: 0xbbbbbb }),
+  new THREE.MeshStandardMaterial({ color: 0xcccccc }),
+  new THREE.MeshStandardMaterial({ color: 0xdddddd }),
+  new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
+  new THREE.MeshStandardMaterial({ color: 0xffffff }),
+]
+
 export class HairGenerator {
   clamps: HairPoint[][][] = []
   rect: Rect
@@ -52,7 +60,7 @@ export class HairGenerator {
     let origins: [number, number, number][][] = []
 
     for (let i = 0; i < this.MAX_ORIGINS; ++i) {
-      const originShift = 0.01
+      const originShift = 0.005
       const vSteps = 5
       const v = i % vSteps // vertical index 0 - vSteps
       const h = i / vSteps // horizontal index 0 - this.MAX_ORIGINS / vSteps
@@ -132,7 +140,7 @@ export class HairGenerator {
 
     // clamp modifier
     paths.forEach((p) => {
-      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.3, 0.7, 0.6))
+      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.1, 0.7, 0.6))
     })
 
     return paths
@@ -160,23 +168,26 @@ export class HairGenerator {
 
   createPath(origin: [number, number, number]) {
     let path = []
-    let point: HairPoint = {
-      pos: [origin[0], origin[1], origin[2]],
-      width: this.width,
-    }
-    path.push(point)
+    // let point: HairPoint = {
+    //   pos: [origin[0], origin[1], origin[2]],
+    //   width: this.mapWidth(0, this.width),
+    // }
+    // path.push(point)
     const freq1 = Math.random() * 20 + 5
     const freq2 = Math.random() * 20 + 5
     const elev = Math.random() * this.ELEVATION
     const len = this.rect.h * (0.96 - Math.random() * 0.4)
+    const phase = Math.random() * 20 * Math.PI
 
-    for (let i = 0; i < this.SEGMENTS - 1; ++i) {
+    for (let i = 0; i < this.SEGMENTS; ++i) {
       const t = i / this.SEGMENTS
-      point = {
+      let point = {
         pos: [
-          origin[0] + Math.sin(freq1 * t) * this.maxd,
+          origin[0] + Math.sin(freq1 * t + phase) * this.maxd,
           origin[1] - t * len,
-          origin[2] + Math.sin(freq2 * t) * this.maxd + this.mapElev(t, elev),
+          origin[2] +
+            Math.sin(freq2 * t + phase) * this.maxd +
+            this.mapElev(t, elev),
         ],
         width: this.mapWidth(t, this.width),
       }
@@ -220,19 +231,12 @@ export class HairGenerator {
     //   new THREE.MeshDepthMaterial({ color: 0xffffff }),
     // ]
 
-    const materials = [
-      new THREE.MeshPhongMaterial({ color: 0xbbbbbb }),
-      new THREE.MeshPhongMaterial({ color: 0xcccccc }),
-      new THREE.MeshPhongMaterial({ color: 0xdddddd }),
-      new THREE.MeshPhongMaterial({ color: 0xeeeeee }),
-      new THREE.MeshPhongMaterial({ color: 0xffffff }),
-    ]
-
     const geos = this.clamps.flat().map((p) => this.createGeo(p))
-    const meshes = geos.map((geo) => {
+    const meshes = geos.map((geo, index) => {
       const k = Math.floor(Math.random() * 5)
-      const mat = materials[k]
+      const mat = standardMaterials[k]
       const mesh = new THREE.Mesh(geo, mat)
+      mesh.name = `hair_${index}`
       // const helper = new VertexNormalsHelper(mesh, 0.05, 0x00ff00)
       // this.scene.add(helper)
       return mesh

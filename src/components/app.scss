@@ -1,0 +1,12 @@
+.app-container {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+  justify-content: stretch;
+}
+
+.app-container__right {
+  flex: 0 0 400px;
+}
