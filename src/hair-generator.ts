@@ -168,23 +168,26 @@ export class HairGenerator {
 
   createPath(origin: [number, number, number]) {
     let path = []
-    let point: HairPoint = {
-      pos: [origin[0], origin[1], origin[2]],
-      width: this.width,
-    }
-    path.push(point)
+    // let point: HairPoint = {
+    //   pos: [origin[0], origin[1], origin[2]],
+    //   width: this.mapWidth(0, this.width),
+    // }
+    // path.push(point)
     const freq1 = Math.random() * 20 + 5
     const freq2 = Math.random() * 20 + 5
     const elev = Math.random() * this.ELEVATION
     const len = this.rect.h * (0.96 - Math.random() * 0.4)
+    const phase = Math.random() * 20 * Math.PI
 
-    for (let i = 0; i < this.SEGMENTS - 1; ++i) {
+    for (let i = 0; i < this.SEGMENTS; ++i) {
       const t = i / this.SEGMENTS
-      point = {
+      let point = {
         pos: [
-          origin[0] + Math.sin(freq1 * t) * this.maxd,
+          origin[0] + Math.sin(freq1 * t + phase) * this.maxd,
           origin[1] - t * len,
-          origin[2] + Math.sin(freq2 * t) * this.maxd + this.mapElev(t, elev),
+          origin[2] +
+            Math.sin(freq2 * t + phase) * this.maxd +
+            this.mapElev(t, elev),
         ],
         width: this.mapWidth(t, this.width),
       }
