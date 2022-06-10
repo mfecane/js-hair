@@ -31,3 +31,15 @@
 //   lastCameraPos = perspCamera.position.clone()
 //   return res
 // }
+
+// let object
+// while (true) {
+//   object = group.children[0] as THREE.Mesh
+//   if (!object) {
+//     break
+//   }
+//   object.geometry.dispose()
+//   object.material.dispose()
+//   group.remove(object)
+//   renderer.renderLists.dispose()
+// }

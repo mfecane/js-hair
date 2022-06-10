@@ -4,7 +4,6 @@ import Renderer from './renderer'
 
 import './app.scss'
 import {
-  Button,
   FormControl,
   FormControlLabel,
   FormLabel,
@@ -14,49 +13,20 @@ import {
 } from '@mui/material'
 
 import LoadingButton from '@mui/lab/LoadingButton'
-
-import {
-  CameraState,
-  exportGLTF,
-  exportObj,
-  generateHair,
-  getMeshes,
-  toggleCameraState,
-} from 'src/scene'
-import { addMeshes, createScene, render } from 'src/renderer'
+import { useScene } from 'src/components/hooks/useScene'
+import WaitButton from './wait-button'
+import { CameraState } from 'src/hair/scene'
 
 const App: React.FC = () => {
   const [cameraState, setCameraState] = useState('persp')
-  const [loading, setLoading] = useState(false)
-  const [loading2, setLoading2] = useState(false)
+
+  const { exportGLTF, generateHair, exportTexture, toggleCameraState } =
+    useScene()
 
   const handleChangeCamera = (e: SyntheticBaseEvent) => {
     const value = e.target.value as CameraState
     toggleCameraState(value)
     setCameraState(value)
-  }
-
-  const handleExport = () => {
-    setLoading(true)
-    exportGLTF().then(() => {
-      setLoading(false)
-    })
-  }
-
-  const handleGenerate = () => {
-    setLoading2(true)
-    generateHair().then(() => {
-      setLoading2(false)
-    })
-  }
-
-  const handleExportTexture = () => {
-    generateHair().then(() => {
-      const meshes = getMeshes()
-      createScene()
-      addMeshes(meshes)
-      render()
-    })
   }
 
   return (
@@ -85,31 +55,15 @@ const App: React.FC = () => {
             </RadioGroup>
           </FormControl>
           <FormControl>
-            <LoadingButton
-              loading={loading2}
-              variant="contained"
-              onClick={handleGenerate}
-            >
+            <WaitButton variant="contained" callback={generateHair}>
               Generate
-            </LoadingButton>
+            </WaitButton>
           </FormControl>
           <FormControl>
-            <LoadingButton
-              loading={loading}
-              variant="outlined"
-              onClick={handleExport}
-            >
-              Export GLTF
-            </LoadingButton>
+            <WaitButton callback={exportGLTF}>Export GLTF</WaitButton>
           </FormControl>
           <FormControl>
-            <LoadingButton
-              loading={loading}
-              variant="outlined"
-              onClick={handleExportTexture}
-            >
-              Export Texture
-            </LoadingButton>
+            <WaitButton callback={exportTexture}>Export Texture</WaitButton>
           </FormControl>
         </Stack>
       </div>

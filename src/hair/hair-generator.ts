@@ -1,4 +1,4 @@
-import { clamp, map, mapclamp, smoothstep } from './lib'
+import { clamp, map, mapclamp, smoothstep } from '../lib'
 import * as THREE from 'three'
 import { Vector3 } from 'three'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'

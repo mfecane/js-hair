@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { saveAs } from 'file-saver'
+import { getGroups } from './hair-meshes'
 
 let scene: THREE.Scene
 let group: THREE.Group
@@ -23,19 +24,10 @@ export const createScene = () => {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setSize(width, height)
 
-  console.log('LOG: window.devicePixelRatio', window.devicePixelRatio)
   renderer.setPixelRatio(window.devicePixelRatio)
 }
 
-export const addMeshes = (
-  meshes: THREE.Mesh<THREE.BufferGeometry, any>[][]
-) => {
-  meshes.flat().forEach((m) => {
-    group.add(m)
-  })
-}
-
-export const render = () => {
+export const renderTexture = () => {
   const bufferTexture = new THREE.WebGLRenderTarget(width, height, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
@@ -62,5 +54,12 @@ export const render = () => {
     if (blob) {
       saveAs(blob, 'texture.png')
     }
+  })
+}
+
+export function updateMeshes() {
+  const groups = getGroups()
+  groups.forEach((g) => {
+    group.add(g)
   })
 }
