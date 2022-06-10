@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import { saveAs } from 'file-saver'
 import { getGroups } from './hair-meshes'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 
 let scene: THREE.Scene
 let group: THREE.Group
@@ -8,6 +11,9 @@ let width: number = 4096
 let height: number = 4096
 let orthoCamera: THREE.OrthographicCamera
 let renderer: THREE.WebGLRenderer
+let composer: EffectComposer
+let renderPass
+let saoPass
 
 export const createScene = () => {
   scene = new THREE.Scene()
@@ -32,11 +38,30 @@ export const renderTexture = () => {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   })
+
   renderer.setRenderTarget(bufferTexture)
-  renderer.render(scene, orthoCamera)
-  var gl = renderer.getContext()
+  composer = new EffectComposer(renderer, bufferTexture)
+  composer.setSize(width, height)
+  renderPass = new RenderPass(scene, orthoCamera)
+  saoPass = new SAOPass(scene, orthoCamera, false, true)
+  composer.addPass(saoPass)
+  composer.render()
+  // const rendercomposer.writeBuffer()
+
+  let texture = bufferTexture.texture
+
+  // var gl = renderer.getContext()
   var pixels = new Uint8Array(4 * width * height)
-  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+  composer.renderer.readRenderTargetPixels(
+    bufferTexture,
+    0,
+    0,
+    width,
+    height,
+    pixels
+  )
+  // gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
   var imageData = new ImageData(new Uint8ClampedArray(pixels), width, height)
 
   var canvas = document.createElement('canvas')
