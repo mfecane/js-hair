@@ -53,11 +53,11 @@ const deleteHair = () => {
   })
 }
 
-export const generateHair = () => {
+export const generateHair = (s: string) => {
   return new Promise((resolve) => {
     let geos: THREE.BufferGeometry[] = []
 
-    resetRand()
+    resetRand(s)
     deleteHair()
 
     let card1 = new HairGenerator({

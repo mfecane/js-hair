@@ -10,6 +10,7 @@ import {
   RadioGroup,
   Slider,
   Stack,
+  TextField,
 } from '@mui/material'
 
 import { useScene } from 'src/components/hooks/useScene'
@@ -20,6 +21,7 @@ const Controls: React.FC = () => {
   const {
     cameraState,
     lightAngle,
+    seed,
     exportGLTF,
     generateHair,
     exportTexture,
@@ -27,6 +29,7 @@ const Controls: React.FC = () => {
     toggleCameraState,
     setLightAnlge,
     addSao,
+    changeSeed,
   } = useScene()
 
   const handleChangeCamera = (e: SyntheticEvent) => {
@@ -36,6 +39,11 @@ const Controls: React.FC = () => {
 
   const handleAngleChange = (e: SyntheticEvent, value: number) => {
     setLightAnlge(value)
+  }
+
+  const handleChangeSeed = (e: SyntheticEvent) => {
+    const value = e.target.value as string
+    changeSeed(value)
   }
 
   return (
@@ -60,6 +68,15 @@ const Controls: React.FC = () => {
               label="Orthographic"
             />
           </RadioGroup>
+        </FormControl>
+        <FormControl>
+          <TextField
+            id="seed"
+            label="Seed"
+            variant="outlined"
+            value={seed}
+            onChange={handleChangeSeed}
+          />
         </FormControl>
         <FormControl>
           <WaitButton variant="contained" callback={generateHair}>

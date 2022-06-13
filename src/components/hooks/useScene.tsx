@@ -17,16 +17,19 @@ import { useReducer, createContext, useContext, useEffect } from 'react'
 interface IState {
   lightAngle: number
   cameraState: CameraState
+  seed: string
 }
 
 type IAction =
   | { type: 'setCameraState'; payload: CameraState }
   | { type: 'setLightAngle'; payload: number }
+  | { type: 'setSeed'; payload: string }
 
 interface IContext extends IState {
+  changeSeed: (s: string) => void
   toggleCameraState: (s: CameraState) => void
   exportGLTF: () => Promise<void>
-  generateHair: () => Promise<void>
+  generateHair: (s: string) => Promise<void>
   exportTexture: () => Promise<void>
   exportAo: () => Promise<void>
   addSao: () => void
@@ -42,6 +45,7 @@ type TReducer = React.Reducer<IState, IAction>
 const initialState: IState = {
   cameraState: 'persp',
   lightAngle: 90,
+  seed: 'ssibal',
 }
 
 const reducer: TReducer = (state, action) => {
@@ -50,6 +54,8 @@ const reducer: TReducer = (state, action) => {
       return { ...state, cameraState: action.payload }
     case 'setLightAngle':
       return { ...state, lightAngle: action.payload }
+    case 'setSeed':
+      return { ...state, seed: action.payload }
   }
 
   return state
@@ -66,7 +72,7 @@ export const useScene = () => {
 }
 
 export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
-  const [{ lightAngle, cameraState }, dispatch] = useReducer<TReducer>(
+  const [{ lightAngle, cameraState, seed }, dispatch] = useReducer<TReducer>(
     reducer,
     initialState
   )
@@ -74,6 +80,7 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
   const context: IContext = {
     cameraState,
     lightAngle,
+    seed,
 
     toggleCameraState: (val: CameraState) => {
       dispatch({ type: 'setCameraState', payload: val })
@@ -85,12 +92,16 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
       dispatch({ type: 'setLightAngle', payload: val })
     },
 
+    changeSeed: (val) => {
+      dispatch({ type: 'setSeed', payload: val })
+    },
+
     exportGLTF: async () => {
       await exportGLTF()
     },
 
     generateHair: async () => {
-      await generateHair()
+      await generateHair(seed)
       updateMeshes()
     },
 
@@ -111,6 +122,7 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
   useEffect(() => {
     context.setLightAnlge(initialState.lightAngle)
     context.toggleCameraState(initialState.cameraState)
+    context.changeSeed(initialState.seed)
   }, [])
 
   return (
