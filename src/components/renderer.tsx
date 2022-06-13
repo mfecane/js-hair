@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { mount } from 'src/scene'
+import { mount } from 'src/hair/preview-scene'
 
 import './renderer.scss'
 
