@@ -3,7 +3,7 @@ import { HairGenerator } from './hair-generator'
 
 // TODO ::: deduplicate materials
 
-type TMesh = THREE.Mesh<THREE.BufferGeometry, any>
+export type TMesh = THREE.Mesh<THREE.BufferGeometry, any>
 
 let groups: THREE.Group[] = [
   new THREE.Group(),
@@ -27,6 +27,13 @@ export const applyMaterials = (materials?: THREE.Material[]) => {
     })
   }
   return groupsCopy
+}
+
+export const insertMeshes = (group: THREE.Group) => {
+  groups.forEach((g) => {
+    const newGroup = g.clone()
+    group.add(newGroup)
+  })
 }
 
 const deleteHair = () => {

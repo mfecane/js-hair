@@ -23,6 +23,7 @@ const Controls: React.FC = () => {
     exportGLTF,
     generateHair,
     exportTexture,
+    exportAo,
     toggleCameraState,
     setLightAnlge,
     addSao,
@@ -70,6 +71,9 @@ const Controls: React.FC = () => {
         </FormControl>
         <FormControl>
           <WaitButton callback={exportTexture}>Export Texture</WaitButton>
+        </FormControl>
+        <FormControl>
+          <WaitButton callback={exportAo}>Export AO</WaitButton>
         </FormControl>
         <FormControl>
           <Button onClick={addSao} variant="outlined">

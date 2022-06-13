@@ -1,9 +1,10 @@
 import * as THREE from 'three'
 import { saveAs } from 'file-saver'
-import { applyMaterials } from './hair-meshes'
+import { applyMaterials, insertMeshes, TMesh } from './hair-meshes'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { eachMesh } from './scene-helpers'
 
 let scene: THREE.Scene
 let group: THREE.Group
@@ -14,13 +15,17 @@ let renderer: THREE.WebGLRenderer
 let composer: EffectComposer
 let renderPass
 let saoPass
+let directionalLight: THREE.DirectionalLight
+const BPP = 4
 
 export const createScene = () => {
   scene = new THREE.Scene()
   group = new THREE.Group()
+
+  insertMeshes(group)
   scene.add(group)
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
   directionalLight.position.set(1.0, 1.0, 1.0)
   directionalLight.castShadow = true
   scene.add(directionalLight)
@@ -32,6 +37,109 @@ export const createScene = () => {
   renderer.setSize(width, height)
 
   renderer.setPixelRatio(window.devicePixelRatio)
+}
+
+const renderImage = () => {
+  renderer.render(scene, orthoCamera)
+
+  const gl = renderer.getContext()
+  var pixels = new Uint8Array(BPP * width * height)
+  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+  return pixels
+}
+
+const setUpShadow = () => {
+  scene.remove(directionalLight)
+  directionalLight.dispose()
+
+  directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  scene.add(directionalLight.target)
+  directionalLight.target.position.set(0.5, 0.5, 0.0)
+  directionalLight.castShadow = true
+  directionalLight.shadow.radius = 4
+  directionalLight.shadow.mapSize.width = 2048 // default
+  directionalLight.shadow.mapSize.height = 2048 // default
+  directionalLight.shadow.camera.near = 0.5 // default
+  directionalLight.shadow.camera.far = 2 // default
+  const shadowSize = 0.6
+  directionalLight.shadow.camera.top = shadowSize
+  directionalLight.shadow.camera.right = shadowSize
+  directionalLight.shadow.camera.bottom = -shadowSize
+  directionalLight.shadow.camera.left = -shadowSize
+  scene.add(directionalLight)
+
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+  eachMesh(group, (m) => {
+    m.castShadow = true
+    m.receiveShadow = true
+  })
+}
+
+const addDilation = (pixels: Uint8Array) => {
+  return pixels
+}
+
+export const renderAoTexture = () => {
+  return new Promise((resolve) => {
+    updateMaterials([new THREE.MeshStandardMaterial({ color: 0xffffff })])
+
+    setUpShadow()
+
+    const imgPixels: Uint8Array[] = []
+
+    let passes = 9
+    for (let a = 30; a <= 150; a += 120 / passes) {
+      const angle = (a / 180) * Math.PI
+      directionalLight.position.set(0.5 + Math.cos(angle), 0.5, Math.sin(angle))
+      const imgData = renderImage()
+      imgPixels.push(imgData)
+    }
+
+    var newPixels = new Uint8Array(BPP * width * height)
+
+    for (let j = 0; j < height; ++j) {
+      console.log(`row ${j} of ${height}`)
+      for (let i = 0; i < width; ++i) {
+        const idx = j * width * BPP + i * BPP
+        let p = 0
+        for (let l = 0; l < passes; ++l) {
+          p += imgPixels[l][idx] / passes
+        }
+        newPixels[idx + 0] = p // only one channel
+        newPixels[idx + 1] = p
+        newPixels[idx + 2] = p
+        newPixels[idx + 3] = imgPixels[0][idx + 3]
+      }
+    }
+
+    var imageData = new ImageData(
+      new Uint8ClampedArray(newPixels),
+      width,
+      height
+    )
+
+    var canvas = document.createElement('canvas')
+    var ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Failed to retrieve canvas context')
+    }
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    ctx.putImageData(imageData, 0, 0)
+
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve) // implied image/png format
+    }).then((blob) => {
+      if (blob) {
+        saveAs(blob, 'texture.png')
+      }
+      resolve(mull)
+      scene.clear()
+    })
+  })
 }
 
 export const renderTexture = () => {
@@ -139,13 +247,13 @@ export const renderTextureComp = () => {
   })
 }
 
-export function updateMeshes() {
-  const materials = new Array(5).map(() => {
-    const mat = new THREE.MeshBasicMaterial()
-    return mat
-  })
-  const groups = applyMaterials(materials)
-  groups.forEach((g) => {
-    group.add(g)
+const updateMaterials = (materials: THREE.Material[]) => {
+  group.children.forEach((el, index) => {
+    const g = el as THREE.Group
+    const matIndex = index % materials.length
+    group.children.forEach((el) => {
+      const mesh = el as TMesh
+      mesh.material = materials[matIndex]
+    })
   })
 }

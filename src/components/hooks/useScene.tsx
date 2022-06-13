@@ -8,8 +8,8 @@ import {
 } from 'src/hair/preview-scene'
 import {
   createScene,
+  renderAoTexture,
   renderTexture,
-  updateMeshes as updateMeshesTexture,
 } from 'src/hair/render-texture'
 import { generateHair } from 'src/hair/hair-meshes'
 import { useReducer, createContext, useContext, useEffect } from 'react'
@@ -28,6 +28,7 @@ interface IContext extends IState {
   exportGLTF: () => Promise<void>
   generateHair: () => Promise<void>
   exportTexture: () => Promise<void>
+  exportAo: () => Promise<void>
   addSao: () => void
   setLightAnlge: (v: number) => void
 }
@@ -94,9 +95,14 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
     },
 
     exportTexture: async () => {
+      // createScene()
+      // updateMeshesTexture()
+      // renderTexture()
+    },
+
+    exportAo: async () => {
       createScene()
-      updateMeshesTexture()
-      renderTexture()
+      await renderAoTexture()
     },
 
     addSao: addSao,
