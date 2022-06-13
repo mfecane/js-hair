@@ -1,7 +1,9 @@
 import * as THREE from 'three'
 import { HairGenerator } from './hair-generator'
 
-type TMeshes = THREE.Mesh<THREE.BufferGeometry, any>
+// TODO ::: deduplicate materials
+
+type TMesh = THREE.Mesh<THREE.BufferGeometry, any>
 
 let groups: THREE.Group[] = [
   new THREE.Group(),
@@ -11,8 +13,20 @@ let groups: THREE.Group[] = [
   new THREE.Group(),
 ]
 
-export const getGroups = () => {
-  return groups
+const defaultMat = new THREE.MeshLambertMaterial()
+
+export const applyMaterials = (materials?: THREE.Material[]) => {
+  const groupsCopy = groups.map((g) => g.clone())
+  if (materials && materials.length) {
+    groupsCopy.forEach((g, index) => {
+      const matIndex = index % materials.length
+      const mat = materials[matIndex]
+      g.children.forEach((mesh: TMesh) => {
+        mesh.material = mat
+      })
+    })
+  }
+  return groupsCopy
 }
 
 const deleteHair = () => {
@@ -33,7 +47,7 @@ const deleteHair = () => {
 
 export const generateHair = () => {
   return new Promise((resolve) => {
-    let meshes: TMeshes[] = []
+    let geos: THREE.BufferGeometry[] = []
 
     deleteHair()
 
@@ -46,7 +60,7 @@ export const generateHair = () => {
       },
       density: 0.4,
     })
-    meshes = meshes.concat(card1.createMeshes())
+    geos = geos.concat(card1.getGeo())
 
     let card2 = new HairGenerator({
       rect: {
@@ -57,7 +71,7 @@ export const generateHair = () => {
       },
       density: 0.3,
     })
-    meshes = meshes.concat(card2.createMeshes())
+    geos = geos.concat(card2.getGeo())
 
     let card3 = new HairGenerator({
       rect: {
@@ -68,7 +82,7 @@ export const generateHair = () => {
       },
       density: 0.2,
     })
-    meshes = meshes.concat(card3.createMeshes())
+    geos = geos.concat(card3.getGeo())
 
     let card4 = new HairGenerator({
       rect: {
@@ -79,7 +93,7 @@ export const generateHair = () => {
       },
       density: 0.1,
     })
-    meshes = meshes.concat(card4.createMeshes())
+    geos = geos.concat(card4.getGeo())
 
     let card5 = new HairGenerator({
       rect: {
@@ -90,7 +104,7 @@ export const generateHair = () => {
       },
       density: 0.05,
     })
-    meshes = meshes.concat(card5.createMeshes())
+    geos = geos.concat(card5.getGeo())
 
     let card6 = new HairGenerator({
       rect: {
@@ -101,7 +115,7 @@ export const generateHair = () => {
       },
       density: 0.02,
     })
-    meshes = meshes.concat(card6.createMeshes())
+    geos = geos.concat(card6.getGeo())
 
     let card7 = new HairGenerator({
       rect: {
@@ -112,12 +126,17 @@ export const generateHair = () => {
       },
       density: 0.01,
     })
-    meshes = meshes.concat(card7.createMeshes())
+    geos = geos.concat(card7.getGeo())
 
-    meshes.flat().forEach((m) => {
-      const index = Math.floor(Math.random() * 5)
-      groups[index].add(m)
+    geos.flat().forEach((geo, index) => {
+      const mesh = new THREE.Mesh(geo, defaultMat)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      mesh.name = `hair_${index}`
+      const groupIdx = Math.floor(Math.random() * groups.length)
+      groups[groupIdx].add(mesh)
     })
+
     resolve(null)
   })
 }

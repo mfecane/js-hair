@@ -1,6 +1,6 @@
 import { clamp, map, mapclamp, smoothstep } from '../lib'
 import * as THREE from 'three'
-import { Vector3 } from 'three'
+import { MeshLambertMaterial, Vector3 } from 'three'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import { groupBy } from 'lodash'
 
@@ -11,6 +11,8 @@ type HairPoint = {
   // col: [number, number, number] // TODO
   width: number
 }
+
+type THairPath = HairPoint[]
 
 type Rect = {
   x: number
@@ -28,17 +30,12 @@ interface HairGeneratorOptions {
   variance?: number
 }
 
-const standardMaterials = [
-  new THREE.MeshStandardMaterial({ color: 0xbbbbbb }),
-  new THREE.MeshStandardMaterial({ color: 0xcccccc }),
-  new THREE.MeshStandardMaterial({ color: 0xdddddd }),
-  new THREE.MeshStandardMaterial({ color: 0xeeeeee }),
-  new THREE.MeshStandardMaterial({ color: 0xffffff }),
-]
+const defaultMat = new MeshLambertMaterial()
 
 export class HairGenerator {
   // flatten here?
-  clamps: HairPoint[][][] = []
+  paths: THairPath[] = []
+  geos: THREE.BufferGeometry[] = []
   rect: Rect
   MAX_ORIGINS = 1500
   variance = 0.01
@@ -61,6 +58,7 @@ export class HairGenerator {
     this.variance = options.variance || this.variance
 
     this.createClamps()
+    this.createMeshes()
   }
 
   createClamps() {
@@ -114,7 +112,7 @@ export class HairGenerator {
     })
 
     // bullshit
-    this.clamps = Object.keys(obj)
+    this.paths = Object.keys(obj)
       .map((key) => {
         let origPoints = obj[key].map((el: TOrigin) => el.point)
         if (key === 'null') {
@@ -123,6 +121,7 @@ export class HairGenerator {
         return this.createClamp(origPoints)
       })
       .filter((cl) => !!cl)
+      .flat()
   }
 
   // shuffleClamps(origins: [number, number, number][][]) {
@@ -221,10 +220,7 @@ export class HairGenerator {
     }
   }
 
-  createPath(origin: [number, number, number]): {
-    pos: [number, number, number]
-    width: number
-  }[] {
+  createPath(origin: [number, number, number]): THairPath {
     let path = []
     // let point: HairPoint = {
     //   pos: [origin[0], origin[1], origin[2]],
@@ -255,7 +251,8 @@ export class HairGenerator {
       path.push(point)
     }
 
-    return path
+    // TODO ::: fix this
+    return path as THairPath
   }
 
   mapWidth(t: number, maxWidth: number) {
@@ -279,30 +276,12 @@ export class HairGenerator {
     return 1
   }
 
-  getPaths() {
-    return this.clamps.flat()
+  createMeshes() {
+    this.geos = this.paths.map((p) => this.createGeo(p))
   }
 
-  createMeshes() {
-    // const materials = [
-    //   new THREE.MeshDepthMaterial({ color: 0xbbbbbb }),
-    //   new THREE.MeshDepthMaterial({ color: 0xcccccc }),
-    //   new THREE.MeshDepthMaterial({ color: 0xdddddd }),
-    //   new THREE.MeshDepthMaterial({ color: 0xeeeeee }),
-    //   new THREE.MeshDepthMaterial({ color: 0xffffff }),
-    // ]
-
-    const geos = this.clamps.flat().map((p) => this.createGeo(p))
-    const meshes = geos.map((geo, index) => {
-      const k = Math.floor(Math.random() * 5)
-      const mat = standardMaterials[k]
-      const mesh = new THREE.Mesh(geo, mat)
-      mesh.name = `hair_${index}`
-      // const helper = new VertexNormalsHelper(mesh, 0.05, 0x00ff00)
-      // this.scene.add(helper)
-      return mesh
-    })
-    return meshes
+  getGeo() {
+    return this.geos
   }
 
   createGeo(path: HairPoint[]) {
