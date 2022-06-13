@@ -8,10 +8,10 @@ import { saveAs } from 'file-saver'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
-import { generateHair, applyMaterials } from './hair-meshes'
+import { generateHair } from './hair-meshes'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
-import { cleanScene } from './scene-helpers'
+import { createMeshes, removeMeshes } from './scene-helpers'
 
 export type CameraState = 'persp' | 'ortho'
 
@@ -232,9 +232,10 @@ function render() {
   composer.render()
 }
 
-function init() {
+const init = async () => {
   createScene()
-  generateHair()
+  // TODO ::: check, no seed
+  await generateHair()
   updateMeshes()
   updateSize()
   createOrbitControls()
@@ -250,19 +251,15 @@ function animate() {
 
 export function updateMeshes() {
   // TODOOO important, remove meshes
-  cleanScene(group)
-
-  const materials = [1, 2, 3, 4, 5].map(() => {
+  removeMeshes(group)
+  const materials = new Array(5).fill(undefined).map(() => {
     const mat = new THREE.MeshLambertMaterial({
       color: 0xffffff,
       side: THREE.FrontSide,
     })
     return mat
   })
-  const groups = applyMaterials(materials)
-  groups.forEach((g) => {
-    group.add(g)
-  })
+  createMeshes(group, materials, { shadow: true })
 }
 
 export const setLightAngle = (v: number) => {

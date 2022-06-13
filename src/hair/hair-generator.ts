@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { MeshLambertMaterial, Vector3 } from 'three'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import { groupBy } from 'lodash'
-import { getRand } from '../lib/random'
+import { rand } from '../lib/random'
 
 // TODO ::: add createSpline
 
@@ -14,6 +14,8 @@ type HairPoint = {
 }
 
 type THairPath = HairPoint[]
+
+export type TGeo = THREE.BufferGeometry
 
 type Rect = {
   x: number
@@ -75,12 +77,12 @@ export class HairGenerator {
     for (let i = 0; i < this.MAX_ORIGINS; i += vSteps) {
       for (let j = 0; j < vSteps; ++j) {
         const x = this.rect.x + (this.rect.w / this.MAX_ORIGINS) * i
-        const y = this.rect.y - originShift * j - getRand() * originShift
+        const y = this.rect.y - originShift * j - rand() * originShift
 
         let clampId: number | null = Math.floor(
           (i / this.MAX_ORIGINS) * this.clampCount
         )
-        const seed = getRand()
+        const seed = rand()
 
         const shuffle = 0.5
 
@@ -105,7 +107,7 @@ export class HairGenerator {
     }
 
     origins = origins.filter(() => {
-      return getRand() < this.density
+      return rand() < this.density
     })
 
     const obj = groupBy(origins, (el: TOrigin) => {
@@ -228,12 +230,12 @@ export class HairGenerator {
     //   width: this.mapWidth(0, this.width),
     // }
     // path.push(point)
-    const freq1 = getRand() * 20 + 5
-    const freq2 = getRand() * 20 + 5
-    const elev = getRand() * this.ELEVATION
-    const len = this.rect.h * (0.96 - getRand() * 0.4)
-    const phase = getRand() * 20 * Math.PI
-    const varRand = (0.5 + 0.5 * getRand()) * this.variance
+    const freq1 = rand() * 20 + 5
+    const freq2 = rand() * 20 + 5
+    const elev = rand() * this.ELEVATION
+    const len = this.rect.h * (0.96 - rand() * 0.4)
+    const phase = rand() * 20 * Math.PI
+    const varRand = (0.5 + 0.5 * rand()) * this.variance
 
     for (let i = 0; i < this.SEGMENTS; ++i) {
       const t = i / this.SEGMENTS

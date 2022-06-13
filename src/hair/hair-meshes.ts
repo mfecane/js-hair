@@ -1,64 +1,27 @@
 import * as THREE from 'three'
-import { HairGenerator } from './hair-generator'
-import { getRand, resetRand } from '../lib/random'
-
-// TODO ::: deduplicate materials
+import { HairGenerator, TGeo } from 'src/hair/hair-generator'
+import { rand, resetRand } from 'src/lib/random'
 
 export type TMesh = THREE.Mesh<THREE.BufferGeometry, any>
 
-let groups: THREE.Group[] = [
-  new THREE.Group(),
-  new THREE.Group(),
-  new THREE.Group(),
-  new THREE.Group(),
-  new THREE.Group(),
-]
+export type TGeoGroup = TGeo[][]
 
-const defaultMat = new THREE.MeshLambertMaterial()
+export const GROUPS_COUNT = 5
+let geoGroup: TGeoGroup
 
-export const applyMaterials = (materials?: THREE.Material[]) => {
-  const groupsCopy = groups.map((g) => g.clone())
-  if (materials && materials.length) {
-    groupsCopy.forEach((g, index) => {
-      const matIndex = index % materials.length
-      const mat = materials[matIndex]
-      g.children.forEach((mesh: TMesh) => {
-        mesh.material = mat
-      })
-    })
-  }
-  return groupsCopy
+export const getGeoGroup = () => {
+  return geoGroup
 }
 
-export const insertMeshes = (group: THREE.Group) => {
-  groups.forEach((g) => {
-    const newGroup = g.clone()
-    group.add(newGroup)
-  })
+export const clearGeoGroup = () => {
+  geoGroup = []
 }
 
-const deleteHair = () => {
-  groups.forEach((g) => {
-    while (true) {
-      let object = g.children[0] as THREE.Mesh
-      if (!object) {
-        break
-      }
-      object.geometry.dispose()
-      object.material.dispose()
-      g.remove(object)
-      // TODO ::: check this
-      // renderer.renderLists.dispose()
-    }
-  })
-}
-
-export const generateHair = (s: string) => {
+export const generateHair = (s: string = '') => {
   return new Promise((resolve) => {
     let geos: THREE.BufferGeometry[] = []
 
     resetRand(s)
-    deleteHair()
 
     let card1 = new HairGenerator({
       rect: {
@@ -138,13 +101,12 @@ export const generateHair = (s: string) => {
     })
     geos = geos.concat(card7.getGeo())
 
-    geos.flat().forEach((geo, index) => {
-      const mesh = new THREE.Mesh(geo, defaultMat)
-      mesh.castShadow = true
-      mesh.receiveShadow = true
-      mesh.name = `hair_${index}`
-      const groupIdx = Math.floor(getRand() * groups.length)
-      groups[groupIdx].add(mesh)
+    if (geoGroup && geoGroup.length) throw new Error('Geometry already exists')
+    geoGroup = new Array(5).fill([])
+
+    geos.flat().forEach((geo) => {
+      const groupIdx = Math.floor(rand() * GROUPS_COUNT)
+      geoGroup[groupIdx].push(geo)
     })
 
     resolve(null)

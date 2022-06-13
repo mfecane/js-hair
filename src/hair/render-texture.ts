@@ -1,10 +1,10 @@
 import * as THREE from 'three'
 import { saveAs } from 'file-saver'
-import { applyMaterials, insertMeshes, TMesh } from './hair-meshes'
+import { TMesh } from 'src/hair/hair-meshes'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { eachMesh } from './scene-helpers'
+import { createMeshes, eachMesh } from './scene-helpers'
 
 let scene: THREE.Scene
 let group: THREE.Group
@@ -22,7 +22,7 @@ export const createScene = () => {
   scene = new THREE.Scene()
   group = new THREE.Group()
 
-  insertMeshes(group)
+  createMeshes(group)
   scene.add(group)
 
   directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
