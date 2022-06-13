@@ -69,6 +69,9 @@ const setUpShadow = () => {
   directionalLight.shadow.camera.left = -shadowSize
   scene.add(directionalLight)
 
+  const light = new THREE.AmbientLight(0xffffff, 0.3) // soft white light
+  scene.add(light)
+
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
@@ -86,10 +89,62 @@ const addDilation = (pixels: Uint8Array) => {
     // pixels[i * BPP + 0] = 255 * (1 - alpha) + pixels[i * BPP + 0] * alpha
     // pixels[i * BPP + 1] = 255 * (1 - alpha) + pixels[i * BPP + 1] * alpha
     // pixels[i * BPP + 2] = 255 * (1 - alpha) + pixels[i * BPP + 2] * alpha
+
+    // if (pixels[i * BPP + 0] < 20) {
+    //   debugger
+    // }
+
     pixels[i * BPP + 0] = pixels[i * BPP + 0] / alpha
     pixels[i * BPP + 1] = pixels[i * BPP + 1] / alpha
     pixels[i * BPP + 2] = pixels[i * BPP + 2] / alpha
     pixels[i * BPP + 3] = 255
+  }
+
+  const dilateFn = (from: number, to: number) => {
+    // if (false) {
+    const next = [pixels[to * BPP], pixels[to * BPP + 1], pixels[to * BPP + 2]]
+
+    const prev = [
+      pixels[from * BPP],
+      pixels[from * BPP + 1],
+      pixels[from * BPP + 2],
+    ]
+
+    const dist = to - from
+    let dilateNum
+    if (dist > 2 * dilate) {
+      dilateNum = dilate
+    } else {
+      dilateNum = Math.floor(dist / 2) + 1
+    }
+
+    for (let k = 1; k < dilateNum; ++k) {
+      let idx2 = to - k
+      // draw dilation map
+      // pixels[idx2 * BPP] = 255
+      // pixels[idx2 * BPP + 1] = 0
+      // pixels[idx2 * BPP + 2] = 0
+      // pixels[idx2 * BPP + 3] = 255
+
+      pixels[idx2 * BPP] = next[0]
+      pixels[idx2 * BPP + 1] = next[1]
+      pixels[idx2 * BPP + 2] = next[2]
+      pixels[idx2 * BPP + 3] = 255
+    }
+
+    for (let k = 1; k < dilateNum; ++k) {
+      let idx2 = from + k
+      // draw dilation map
+      // pixels[idx2 * BPP] = 0
+      // pixels[idx2 * BPP + 1] = 255
+      // pixels[idx2 * BPP + 2] = 0
+      // pixels[idx2 * BPP + 3] = 255
+
+      pixels[idx2 * BPP] = prev[0]
+      pixels[idx2 * BPP + 1] = prev[1]
+      pixels[idx2 * BPP + 2] = prev[2]
+      pixels[idx2 * BPP + 3] = 255
+    }
   }
 
   for (let j = 0; j < height; ++j) {
@@ -99,62 +154,31 @@ const addDilation = (pixels: Uint8Array) => {
 
     for (let i = 0; i < width; ++i) {
       const idx = j * width + i // index in pixels
-      if (pixels[idx * BPP + 3] === 0) {
-        zeros++
-      } else {
+      // TODO ::: handle dilate last col in row
+
+      if (pixels[idx * BPP + 3] !== 0) {
         applyAlpha(idx)
-        // if (zeros > 0) {
-        if (false) {
-          const next = [
-            pixels[idx * BPP],
-            pixels[idx * BPP + 1],
-            pixels[idx * BPP + 2],
-          ]
-          const prev = [
-            pixels[last * BPP],
-            pixels[last * BPP + 1],
-            pixels[last * BPP + 2],
-          ]
 
-          const dist = idx - last
-          let dilateNum
-          if (dist > 2 * dilate) {
-            dilateNum = dilate
-          } else {
-            dilateNum = Math.floor(dist / 2) + 1
-          }
-
-          for (let k = 1; k < dilateNum; ++k) {
-            let idx2 = idx - k
-            // draw dilation map
-            // pixels[idx2 * BPP] = 255
-            // pixels[idx2 * BPP + 1] = 0
-            // pixels[idx2 * BPP + 2] = 0
-            // pixels[idx2 * BPP + 3] = 255
-
-            pixels[idx2 * BPP] = next[0]
-            pixels[idx2 * BPP + 1] = next[1]
-            pixels[idx2 * BPP + 2] = next[2]
-            pixels[idx2 * BPP + 3] = 255
-          }
-
-          for (let k = 1; k < dilateNum; ++k) {
-            let idx2 = last + k
-            // draw dilation map
-            // pixels[idx2 * BPP] = 0
-            // pixels[idx2 * BPP + 1] = 255
-            // pixels[idx2 * BPP + 2] = 0
-            // pixels[idx2 * BPP + 3] = 255
-
-            pixels[idx2 * BPP] = prev[0]
-            pixels[idx2 * BPP + 1] = prev[1]
-            pixels[idx2 * BPP + 2] = prev[2]
-            pixels[idx2 * BPP + 3] = 255
-          }
+        // dilate in middle
+        if (zeros > 0) {
+          dilateFn(last, idx)
         }
+
+        // dilate first, not needed
+        // if (last === 0) {
+        //   dilateFn(0, idx)
+        // }
+
         zeros = 0
         last = idx
+      } else {
+        zeros++
       }
+    }
+
+    // dilate last
+    if (last !== 0) {
+      dilateFn(last, j * width + width - 1)
     }
   }
   return pixels
@@ -328,12 +352,8 @@ export const renderTextureComp = () => {
 }
 
 const updateMaterials = (materials: THREE.Material[]) => {
-  group.children.forEach((el, index) => {
-    const g = el as THREE.Group
-    const matIndex = index % materials.length
-    group.children.forEach((el) => {
-      const mesh = el as TMesh
-      mesh.material = materials[matIndex]
-    })
+  eachMesh(group, (mesh, groupIndex) => {
+    const matIndex = groupIndex % materials.length
+    mesh.material = materials[matIndex]
   })
 }

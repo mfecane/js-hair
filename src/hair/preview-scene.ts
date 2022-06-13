@@ -64,6 +64,9 @@ const createScene = () => {
   // )
   // scene.add(directionalLightShadowHelper)
 
+  const light = new THREE.AmbientLight(0xffffff, 0.5) // soft white light
+  scene.add(light)
+
   // TODO ::: make occlution by casting light from different directions
   perspCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000)
   perspCamera.position.set(0.5, 0.5, 2)
