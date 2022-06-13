@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { HairGenerator } from './hair-generator'
+import { getRand, resetRand } from '../lib/random'
 
 // TODO ::: deduplicate materials
 
@@ -56,6 +57,7 @@ export const generateHair = () => {
   return new Promise((resolve) => {
     let geos: THREE.BufferGeometry[] = []
 
+    resetRand()
     deleteHair()
 
     let card1 = new HairGenerator({
@@ -65,6 +67,7 @@ export const generateHair = () => {
         w: 0.2,
         h: 1,
       },
+      clampCount: 12,
       density: 0.4,
     })
     geos = geos.concat(card1.getGeo())
@@ -140,7 +143,7 @@ export const generateHair = () => {
       mesh.castShadow = true
       mesh.receiveShadow = true
       mesh.name = `hair_${index}`
-      const groupIdx = Math.floor(Math.random() * groups.length)
+      const groupIdx = Math.floor(getRand() * groups.length)
       groups[groupIdx].add(mesh)
     })
 

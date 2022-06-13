@@ -69,8 +69,8 @@ const setUpShadow = () => {
   directionalLight.shadow.camera.left = -shadowSize
   scene.add(directionalLight)
 
-  const light = new THREE.AmbientLight(0xffffff, 0.3) // soft white light
-  scene.add(light)
+  // const light = new THREE.AmbientLight(0xffffff, 0.1) // soft white light
+  // scene.add(light)
 
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap

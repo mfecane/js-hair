@@ -11,6 +11,7 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
 import { generateHair, applyMaterials } from './hair-meshes'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
+import { cleanScene } from './scene-helpers'
 
 export type CameraState = 'persp' | 'ortho'
 
@@ -64,7 +65,7 @@ const createScene = () => {
   // )
   // scene.add(directionalLightShadowHelper)
 
-  const light = new THREE.AmbientLight(0xffffff, 0.5) // soft white light
+  const light = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
   scene.add(light)
 
   // TODO ::: make occlution by casting light from different directions
@@ -248,6 +249,9 @@ function animate() {
 }
 
 export function updateMeshes() {
+  // TODOOO important, remove meshes
+  cleanScene(group)
+
   const materials = [1, 2, 3, 4, 5].map(() => {
     const mat = new THREE.MeshLambertMaterial({
       color: 0xffffff,

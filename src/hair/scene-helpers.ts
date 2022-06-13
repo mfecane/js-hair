@@ -12,3 +12,19 @@ export const eachMesh = (
     })
   })
 }
+
+export const cleanScene = (group: THREE.Group) => {
+  while (true) {
+    let g = group.children[0] as THREE.Group
+    if (!g) {
+      break
+    }
+    g.children.forEach((el) => {
+      const mesh = el as THREE.Mesh
+      mesh.geometry.dispose()
+      mesh.material.dispose()
+      g.remove(mesh)
+    })
+    group.remove(g)
+  }
+}
