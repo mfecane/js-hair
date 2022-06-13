@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { HairGenerator, TGeo } from 'src/hair/hair-generator'
 import { rand, resetRand } from 'src/lib/random'
+import { removeMeshes } from './scene-helpers'
 
 export type TMesh = THREE.Mesh<THREE.BufferGeometry, any>
 
@@ -20,7 +21,6 @@ export const clearGeoGroup = () => {
 export const generateHair = (s: string = '') => {
   return new Promise((resolve) => {
     let geos: THREE.BufferGeometry[] = []
-
     resetRand(s)
 
     let card1 = new HairGenerator({
@@ -102,9 +102,11 @@ export const generateHair = (s: string = '') => {
     geos = geos.concat(card7.getGeo())
 
     if (geoGroup && geoGroup.length) throw new Error('Geometry already exists')
-    geoGroup = new Array(5).fill([])
+    geoGroup = new Array(5).fill(undefined).map(() => {
+      return []
+    })
 
-    geos.flat().forEach((geo) => {
+    geos.forEach((geo) => {
       const groupIdx = Math.floor(rand() * GROUPS_COUNT)
       geoGroup[groupIdx].push(geo)
     })

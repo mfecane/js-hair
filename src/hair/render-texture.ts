@@ -25,14 +25,13 @@ export const createScene = () => {
   createMeshes(group)
   scene.add(group)
 
+  // TODO ::: make occlution by casting light from different directions
+  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.1, 0.1)
+
   directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
   directionalLight.position.set(1.0, 1.0, 1.0)
   directionalLight.castShadow = true
   scene.add(directionalLight)
-
-  // TODO ::: make occlution by casting light from different directions
-  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.1, 0.1)
-
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setSize(width, height)
 
@@ -79,6 +78,134 @@ const setUpShadow = () => {
     m.castShadow = true
     m.receiveShadow = true
   })
+}
+
+const createScene2 = () => {
+  scene = new THREE.Scene()
+  group = new THREE.Group()
+  scene.add(group)
+  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.05, 0.01)
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+  renderer.setSize(width, height)
+  renderer.setPixelRatio(window.devicePixelRatio)
+}
+
+export const createAlphaMap = () => {
+  return new Promise((resolve) => {
+    createScene2()
+    createMeshes(group, [new THREE.MeshBasicMaterial({ color: 0xffffff })])
+
+    renderer.render(scene, orthoCamera)
+
+    const gl = renderer.getContext()
+    var pixels = new Uint8Array(4 * width * height)
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    downloadImage(pixels, 'hair-alpha-map.png').then(function () {
+      resolve(null)
+    })
+  })
+}
+
+export const createIdMap = () => {
+  return new Promise((resolve) => {
+    createScene2()
+
+    const materials = [
+      new THREE.MeshBasicMaterial({ color: 0x333333 }),
+      new THREE.MeshBasicMaterial({ color: 0x666666 }),
+      new THREE.MeshBasicMaterial({ color: 0x999999 }),
+      new THREE.MeshBasicMaterial({ color: 0xcccccc }),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    ]
+    // const materials = [
+    //   new MeshBasicMaterial({ color: 0xff0000 }),
+    //   new MeshBasicMaterial({ color: 0x00ff00 }),
+    //   new MeshBasicMaterial({ color: 0x0000ff }),
+    //   new MeshBasicMaterial({ color: 0xffff00 }),
+    //   new MeshBasicMaterial({ color: 0x00ffff }),
+    // ]
+    createMeshes(group, materials)
+
+    // eachMesh(group, (mesh) => {
+    //   console.log('mesh.material.color', mesh.material.color)
+    // })
+
+    renderer.render(scene, orthoCamera)
+
+    const gl = renderer.getContext()
+    var pixels = new Uint8Array(4 * width * height)
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    pixels = addDilation(pixels)
+
+    downloadImage(pixels, 'hair-id-map.png').then(function () {
+      resolve(null)
+    })
+  })
+}
+
+export const createNormalMap = () => {
+  return new Promise((resolve) => {
+    createScene2()
+
+    const materials = [new THREE.MeshNormalMaterial()]
+    createMeshes(group, materials)
+
+    renderer.render(scene, orthoCamera)
+
+    const gl = renderer.getContext()
+    var pixels = new Uint8Array(4 * width * height)
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    pixels = addDilation(pixels)
+
+    downloadImage(pixels, 'hair-normal-map.png').then(function () {
+      resolve(null)
+    })
+  })
+}
+
+export const createHeightMap = () => {
+  return new Promise((resolve) => {
+    createScene2()
+
+    const materials = [new THREE.MeshDepthMaterial()]
+    createMeshes(group, materials)
+
+    renderer.render(scene, orthoCamera)
+
+    const gl = renderer.getContext()
+    var pixels = new Uint8Array(4 * width * height)
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    pixels = addDilation(pixels)
+
+    downloadImage(pixels, 'hair-normal-map.png').then(function () {
+      resolve(null)
+    })
+  })
+}
+
+const downloadImage = async (pixels: Uint8Array, name: string) => {
+  var imageData = new ImageData(new Uint8ClampedArray(pixels), width, height)
+
+  var canvas = document.createElement('canvas')
+  var ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('Failed to retrieve canvas context')
+  }
+  canvas.width = width
+  canvas.height = height
+  ctx.putImageData(imageData, 0, 0)
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve) // implied image/png format
+  })
+  if (blob) {
+    saveAs(blob, name)
+  }
+  scene.clear()
 }
 
 const addDilation = (pixels: Uint8Array) => {

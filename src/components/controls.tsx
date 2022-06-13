@@ -30,6 +30,8 @@ const Controls: React.FC = () => {
     setLightAnlge,
     addSao,
     changeSeed,
+    createAlphaMap,
+    createIdMap,
   } = useScene()
 
   const handleChangeCamera = (e: SyntheticEvent) => {
@@ -91,6 +93,12 @@ const Controls: React.FC = () => {
         </FormControl>
         <FormControl>
           <WaitButton callback={exportAo}>Export AO</WaitButton>
+        </FormControl>
+        <FormControl>
+          <WaitButton callback={createAlphaMap}>Export alpha map</WaitButton>
+        </FormControl>
+        <FormControl>
+          <WaitButton callback={createIdMap}>Export ID map</WaitButton>
         </FormControl>
         <FormControl>
           <Button onClick={addSao} variant="outlined">

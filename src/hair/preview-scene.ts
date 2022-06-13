@@ -8,7 +8,7 @@ import { saveAs } from 'file-saver'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
-import { generateHair } from './hair-meshes'
+import { clearGeoGroup, generateHair } from './hair-meshes'
 import { SAOPass } from 'three/examples/jsm/postprocessing/SAOPass'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
 import { createMeshes, removeMeshes } from './scene-helpers'
@@ -247,6 +247,11 @@ function animate() {
   requestAnimationFrame(animate)
   controls?.update()
   render()
+}
+
+export const clearScene = () => {
+  removeMeshes(group)
+  clearGeoGroup()
 }
 
 export function updateMeshes() {

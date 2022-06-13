@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { rand } from 'src/lib/random'
 import { getGeoGroup, TMesh } from 'src/hair/hair-meshes'
 
 type TCreateMeshesOptions = {
@@ -21,14 +20,15 @@ export const createMeshes = (
   }
   const geoGroup = getGeoGroup()
   let index = 0
-  return geoGroup.forEach((gr) => {
+  return geoGroup.forEach((gr, groupIndex) => {
     const group = new THREE.Group()
+    const matIndex = groupIndex % materials.length
     root.add(group)
     return gr.forEach((geo) => {
       index++
-      materials = materials as THREE.Material[]
-      const matIndex = Math.floor(materials.length * rand())
-      const mesh = new THREE.Mesh(geo, materials[matIndex])
+      const mat = materials[matIndex]
+      // console.log('mat.color', mat.color)
+      const mesh = new THREE.Mesh(geo, mat)
 
       // bull shit!
       if (options.shadow) {
@@ -60,10 +60,10 @@ export const removeMeshes = (root: THREE.Group) => {
 }
 
 export const eachMesh = (
-  group: THREE.Group,
+  root: THREE.Group,
   callback: (m: TMesh, groupIndex: number) => void
 ) => {
-  group.children.forEach((el, groupIndex) => {
+  root.children.forEach((el, groupIndex) => {
     const g = el as THREE.Group
     g.children.forEach((el) => {
       const m = el as TMesh

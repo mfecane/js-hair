@@ -1,6 +1,7 @@
 import {
   addSao,
   CameraState,
+  clearScene,
   exportGLTF,
   setLightAngle as setSceneLightAngle,
   toggleCameraState,
@@ -10,6 +11,10 @@ import {
   createScene,
   renderAoTexture,
   renderTexture,
+  createAlphaMap,
+  createIdMap,
+  createNormalMap,
+  createHeightMap,
 } from 'src/hair/render-texture'
 import { generateHair } from 'src/hair/hair-meshes'
 import { useReducer, createContext, useContext, useEffect } from 'react'
@@ -34,6 +39,8 @@ interface IContext extends IState {
   exportAo: () => Promise<void>
   addSao: () => void
   setLightAnlge: (v: number) => void
+  createAlphaMap: () => Promise<void>
+  createIdMap: () => Promise<void>
 }
 
 interface IStoreProviderProps {
@@ -101,6 +108,7 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
     },
 
     generateHair: async () => {
+      clearScene()
       await generateHair(seed)
       updateMeshes()
     },
@@ -114,6 +122,16 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
     exportAo: async () => {
       createScene()
       await renderAoTexture()
+    },
+
+    createAlphaMap: async () => {
+      await createAlphaMap()
+    },
+
+    createIdMap: async () => {
+      await createIdMap()
+      // await createNormalMap()
+      // await createHeightMap()
     },
 
     addSao: addSao,

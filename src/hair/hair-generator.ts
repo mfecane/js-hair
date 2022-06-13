@@ -1,9 +1,9 @@
-import { clamp, map, mapclamp, smoothstep } from '../lib/lib'
+import { map, smoothstep } from '../lib/lib'
 import * as THREE from 'three'
-import { MeshLambertMaterial, Vector3 } from 'three'
+import { Vector3 } from 'three'
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper'
 import { groupBy } from 'lodash'
-import { rand } from '../lib/random'
+import { rand } from 'src/lib/random'
 
 // TODO ::: add createSpline
 
@@ -32,8 +32,6 @@ interface HairGeneratorOptions {
   stray?: number
   variance?: number
 }
-
-const defaultMat = new MeshLambertMaterial()
 
 export class HairGenerator {
   // flatten here?
