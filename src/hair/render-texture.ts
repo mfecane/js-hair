@@ -79,6 +79,84 @@ const setUpShadow = () => {
 }
 
 const addDilation = (pixels: Uint8Array) => {
+  const dilate = 8
+
+  const applyAlpha = (i: number) => {
+    const alpha = pixels[i * BPP + 3] / 255
+    // pixels[i * BPP + 0] = 255 * (1 - alpha) + pixels[i * BPP + 0] * alpha
+    // pixels[i * BPP + 1] = 255 * (1 - alpha) + pixels[i * BPP + 1] * alpha
+    // pixels[i * BPP + 2] = 255 * (1 - alpha) + pixels[i * BPP + 2] * alpha
+    pixels[i * BPP + 0] = pixels[i * BPP + 0] / alpha
+    pixels[i * BPP + 1] = pixels[i * BPP + 1] / alpha
+    pixels[i * BPP + 2] = pixels[i * BPP + 2] / alpha
+    pixels[i * BPP + 3] = 255
+  }
+
+  for (let j = 0; j < height; ++j) {
+    let last = 0
+    let zeros = 0
+    console.log(`dilation row ${j} of ${height}`)
+
+    for (let i = 0; i < width; ++i) {
+      const idx = j * width + i // index in pixels
+      if (pixels[idx * BPP + 3] === 0) {
+        zeros++
+      } else {
+        applyAlpha(idx)
+        // if (zeros > 0) {
+        if (false) {
+          const next = [
+            pixels[idx * BPP],
+            pixels[idx * BPP + 1],
+            pixels[idx * BPP + 2],
+          ]
+          const prev = [
+            pixels[last * BPP],
+            pixels[last * BPP + 1],
+            pixels[last * BPP + 2],
+          ]
+
+          const dist = idx - last
+          let dilateNum
+          if (dist > 2 * dilate) {
+            dilateNum = dilate
+          } else {
+            dilateNum = Math.floor(dist / 2) + 1
+          }
+
+          for (let k = 1; k < dilateNum; ++k) {
+            let idx2 = idx - k
+            // draw dilation map
+            // pixels[idx2 * BPP] = 255
+            // pixels[idx2 * BPP + 1] = 0
+            // pixels[idx2 * BPP + 2] = 0
+            // pixels[idx2 * BPP + 3] = 255
+
+            pixels[idx2 * BPP] = next[0]
+            pixels[idx2 * BPP + 1] = next[1]
+            pixels[idx2 * BPP + 2] = next[2]
+            pixels[idx2 * BPP + 3] = 255
+          }
+
+          for (let k = 1; k < dilateNum; ++k) {
+            let idx2 = last + k
+            // draw dilation map
+            // pixels[idx2 * BPP] = 0
+            // pixels[idx2 * BPP + 1] = 255
+            // pixels[idx2 * BPP + 2] = 0
+            // pixels[idx2 * BPP + 3] = 255
+
+            pixels[idx2 * BPP] = prev[0]
+            pixels[idx2 * BPP + 1] = prev[1]
+            pixels[idx2 * BPP + 2] = prev[2]
+            pixels[idx2 * BPP + 3] = 255
+          }
+        }
+        zeros = 0
+        last = idx
+      }
+    }
+  }
   return pixels
 }
 
@@ -101,7 +179,7 @@ export const renderAoTexture = () => {
     var newPixels = new Uint8Array(BPP * width * height)
 
     for (let j = 0; j < height; ++j) {
-      console.log(`row ${j} of ${height}`)
+      console.log(`generating ao row ${j} of ${height}`)
       for (let i = 0; i < width; ++i) {
         const idx = j * width * BPP + i * BPP
         let p = 0
@@ -114,6 +192,8 @@ export const renderAoTexture = () => {
         newPixels[idx + 3] = imgPixels[0][idx + 3]
       }
     }
+
+    newPixels = addDilation(newPixels)
 
     var imageData = new ImageData(
       new Uint8ClampedArray(newPixels),
@@ -136,7 +216,7 @@ export const renderAoTexture = () => {
       if (blob) {
         saveAs(blob, 'texture.png')
       }
-      resolve(mull)
+      resolve(null)
       scene.clear()
     })
   })
