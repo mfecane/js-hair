@@ -7,17 +7,10 @@ import {
   toggleCameraState,
   updateMeshes,
 } from 'src/hair/preview-scene'
-import {
-  createScene,
-  renderAoTexture,
-  renderTexture,
-  createAlphaMap,
-  createIdMap,
-  createNormalMap,
-  createHeightMap,
-} from 'src/hair/render-texture'
+import { createMaps } from 'src/hair/render-texture'
 import { generateHair } from 'src/hair/hair-meshes'
 import { useReducer, createContext, useContext, useEffect } from 'react'
+import { SEED } from 'src/lib/random'
 
 interface IState {
   lightAngle: number
@@ -34,13 +27,9 @@ interface IContext extends IState {
   changeSeed: (s: string) => void
   toggleCameraState: (s: CameraState) => void
   exportGLTF: () => Promise<void>
-  generateHair: (s: string) => Promise<void>
-  exportTexture: () => Promise<void>
-  exportAo: () => Promise<void>
-  addSao: () => void
+  generateHair: () => Promise<void>
   setLightAnlge: (v: number) => void
-  createAlphaMap: () => Promise<void>
-  createIdMap: () => Promise<void>
+  exportTextures: () => Promise<void>
 }
 
 interface IStoreProviderProps {
@@ -52,7 +41,7 @@ type TReducer = React.Reducer<IState, IAction>
 const initialState: IState = {
   cameraState: 'persp',
   lightAngle: 90,
-  seed: 'ssibal',
+  seed: SEED,
 }
 
 const reducer: TReducer = (state, action) => {
@@ -113,28 +102,9 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
       updateMeshes()
     },
 
-    exportTexture: async () => {
-      // createScene()
-      // updateMeshesTexture()
-      // renderTexture()
+    exportTextures: async () => {
+      await createMaps()
     },
-
-    exportAo: async () => {
-      createScene()
-      await renderAoTexture()
-    },
-
-    createAlphaMap: async () => {
-      await createAlphaMap()
-    },
-
-    createIdMap: async () => {
-      await createIdMap()
-      // await createNormalMap()
-      // await createHeightMap()
-    },
-
-    addSao: addSao,
   }
 
   useEffect(() => {

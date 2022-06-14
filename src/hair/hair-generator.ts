@@ -45,12 +45,10 @@ export class HairGenerator {
   width = 0.0005
   density = 0.5
   clampCount = 5
-  stray = 0.5
-  // scene: THREE.Scene | null
+  stray = 0.3
 
   constructor(options: HairGeneratorOptions) {
     this.rect = options.rect
-    // this.scene = scene
 
     this.density = options.density || this.density
     this.clampCount = options.clampCount || this.clampCount
@@ -125,48 +123,7 @@ export class HairGenerator {
       .flat()
   }
 
-  // shuffleClamps(origins: [number, number, number][][]) {
-  //   let i = 0
-  //   while (origins[i]) {
-  //     if (origins[i - 1]) {
-  //       this.moveItemsBetweenArrays(origins[i], origins[i - 1])
-  //     }
-  //     if (origins[i + 1]) {
-  //       this.moveItemsBetweenArrays(origins[i], origins[i + 1])
-  //     }
-  //     ++i
-  //   }
-  // }
-
-  // moveItemsBetweenArrays(
-  //   arr1: [number, number, number][],
-  //   arr2: [number, number, number][]
-  // ) {
-  //   let i = 0
-  //   while (arr1[i]) {
-  //     if (getRand() < 0.3) {
-  //       this.moveItemBetweenArrays(arr1, arr2, i)
-  //     }
-  //     ++i
-  //   }
-  // }
-
-  moveItemBetweenArrays(
-    arr1: [number, number, number][],
-    arr2: [number, number, number][],
-    index: number
-  ) {
-    const el = arr1[index]
-    arr1.splice(index, 1)
-    arr2.push(el)
-  }
-
   createClamp(origins: [number, number, number][]) {
-    // TODO
-    // create base path per clamp group
-    // attract paths in clamp group to
-    // clamp base path
-
     const avgX =
       origins.reduce((acc, cur) => {
         return acc + cur[0]
@@ -184,7 +141,7 @@ export class HairGenerator {
 
     // clamp modifier
     paths.forEach((p) => {
-      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.35, 0.7, 0.8))
+      this.addPath(p, basePath, 0.9, (t) => profile1(t, 0.35, 0.8, 0.8))
     })
 
     return paths
@@ -223,11 +180,7 @@ export class HairGenerator {
 
   createPath(origin: [number, number, number]): THairPath {
     let path = []
-    // let point: HairPoint = {
-    //   pos: [origin[0], origin[1], origin[2]],
-    //   width: this.mapWidth(0, this.width),
-    // }
-    // path.push(point)
+
     const freq1 = rand() * 20 + 5
     const freq2 = rand() * 20 + 5
     const elev = rand() * this.ELEVATION

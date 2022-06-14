@@ -1,6 +1,6 @@
 import { create, RandomSeed } from 'random-seed'
 
-const SEED = 'ssibal'
+export const SEED = 'seed'
 let randomSeed: RandomSeed
 
 export const resetRand = (seed?: string) => {

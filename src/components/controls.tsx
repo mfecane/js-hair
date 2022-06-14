@@ -11,6 +11,7 @@ import {
   Slider,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material'
 
 import { useScene } from 'src/components/hooks/useScene'
@@ -24,26 +25,26 @@ const Controls: React.FC = () => {
     seed,
     exportGLTF,
     generateHair,
-    exportTexture,
-    exportAo,
+    exportTextures,
     toggleCameraState,
     setLightAnlge,
-    addSao,
     changeSeed,
-    createAlphaMap,
-    createIdMap,
   } = useScene()
 
-  const handleChangeCamera = (e: SyntheticEvent) => {
+  const handleChangeCamera = (e: Event) => {
     const value = e.target.value as CameraState
     toggleCameraState(value)
   }
 
-  const handleAngleChange = (e: SyntheticEvent, value: number) => {
-    setLightAnlge(value)
+  const handleAngleChange = (
+    e: Event,
+    value: number | number[],
+    activeThumb: number
+  ) => {
+    setLightAnlge(value as number)
   }
 
-  const handleChangeSeed = (e: SyntheticEvent) => {
+  const handleChangeSeed = (e: Event) => {
     const value = e.target.value as string
     changeSeed(value)
   }
@@ -89,23 +90,10 @@ const Controls: React.FC = () => {
           <WaitButton callback={exportGLTF}>Export GLTF</WaitButton>
         </FormControl>
         <FormControl>
-          <WaitButton callback={exportTexture}>Export Texture</WaitButton>
+          <WaitButton callback={exportTextures}>Export textures</WaitButton>
         </FormControl>
         <FormControl>
-          <WaitButton callback={exportAo}>Export AO</WaitButton>
-        </FormControl>
-        <FormControl>
-          <WaitButton callback={createAlphaMap}>Export alpha map</WaitButton>
-        </FormControl>
-        <FormControl>
-          <WaitButton callback={createIdMap}>Export ID map</WaitButton>
-        </FormControl>
-        <FormControl>
-          <Button onClick={addSao} variant="outlined">
-            Add sao
-          </Button>
-        </FormControl>
-        <FormControl>
+          <Typography>Light position</Typography>
           <Slider
             defaultValue={70}
             value={lightAngle}
