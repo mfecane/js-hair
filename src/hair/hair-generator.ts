@@ -123,7 +123,6 @@ export class HairGenerator {
     // remove some origins
     origins = origins.filter((origin) => {
       const factor = 1 - this.diff(origin.point[0], 0.5, 1.0)
-      console.log('factor', factor)
       return rand() < this.options.density * factor
     })
 

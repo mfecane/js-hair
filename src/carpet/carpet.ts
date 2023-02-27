@@ -1,21 +1,5 @@
-import {
-  AxesHelper,
-  Euler,
-  InstancedMesh,
-  Matrix4,
-  Mesh,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
-  MeshPhongMaterial,
-  MeshPhysicalMaterial,
-  PlaneGeometry,
-  Quaternion,
-  Shader,
-  TextureLoader,
-  Vector3,
-} from 'three'
-import { CardGeometry } from './CardGeometry'
-import { CarpetFactory } from './CarpetFactory'
+
+import * as THREE from 'three'
 import { Renderer } from './Renderer'
 import { ThreeLightsLightScheme } from './ThreeLightLightSceme'
 
@@ -28,121 +12,125 @@ export const showCarpet = (el: HTMLElement) => {
   renderer.animate()
 }
 
-var vertexShader = `
-#define STANDARD
-varying vec3 vViewPosition;
-#ifdef USE_TRANSMISSION
-    varying vec3 vWorldPosition;
-#endif
-#include <common>
-#include <uv_pars_vertex>
-#include <uv2_pars_vertex>
-#include <displacementmap_pars_vertex>
-#include <color_pars_vertex>
-#include <fog_pars_vertex>
-#include <normal_pars_vertex>
-#include <morphtarget_pars_vertex>
-#include <skinning_pars_vertex>
-#include <shadowmap_pars_vertex>
-#include <logdepthbuf_pars_vertex>
-#include <clipping_planes_pars_vertex>
+const NUM_LAYERS = 20
 
-void main() {
-    #include <uv_vertex>
-    #include <uv2_vertex>
-    #include <color_vertex>
-    #include <morphcolor_vertex>
-    #include <beginnormal_vertex>
-    #include <morphnormal_vertex>
-    #include <skinbase_vertex>
-    #include <skinnormal_vertex>
-    #include <defaultnormal_vertex>
-    #include <normal_vertex>
-    #include <begin_vertex>
-    #include <morphtarget_vertex>
-    #include <skinning_vertex>
-    #include <displacementmap_vertex>
-    #include <project_vertex>
-    #include <logdepthbuf_vertex>
-    #include <clipping_planes_vertex>
+const vertexShader = `
 
-    float amplitude = 0.1;
-    float frequency = 3.0;
-    gl_Position.x += sin(transformed.y * frequency) * amplitude;
-    gl_Position.z += cos(transformed.y * frequency) * amplitude;
+uniform float offset;
+uniform float globalTime;
+uniform vec3 gravity;
 
-    vViewPosition = - mvPosition.xyz;
-    #include <worldpos_vertex>
-    #include <shadowmap_vertex>
-    #include <fog_vertex>
-    #ifdef USE_TRANSMISSION
-        vWorldPosition = worldPosition.xyz;
-    #endif
-}`
+varying vec2 vTexCoord;
+varying vec3 vNorm;
 
-const createObjects = () => {
-  var textureLoader = new TextureLoader()
-  var material = new MeshPhysicalMaterial({
-    color: 0xFFBBAA,
-    normalMap: textureLoader.load('hair-textures/hair-normal-map.png'),
-    aoMap: textureLoader.load('hair-textures/hair-ao-map.png'),
-    alphaMap: textureLoader.load('hair-textures/hair-alpha-map.png'),
-    alphaTest: 0.9,
-    wireframe: true,
-  })
+const float spacing = 0.1;
 
-  // material.onBeforeCompile = function (shader: Shader) {
-  //   // shader.vertexShader = vertexShader;
-  //   shader.uniforms.time = { value: 0 }
-  // }
+void main()
+{
+    // Calculate the effect of gravity and wind on the fur.
+    vec3 displacement = gravity + vec3(
+        sin(globalTime+position.x*0.05)*0.4,
+        cos(globalTime*0.7+position.y*0.04)*0.4,
+        sin(globalTime*0.7+position.y*0.04)*0.4
+    );
+    //displacement = vec3(0,0,0);
+    vec3 aNorm = normal;
+    aNorm.xyz += displacement*pow(offset, 3.0);
 
-  const NUM_FIBERS = 20000
+    // Calculate distance from original mesh.
+    vec3 point = position.xyz + (normalize(aNorm)*offset*spacing);
 
-  var geometry = new CardGeometry(0.2, 0.2, 1, 4)
-  const mesh = new InstancedMesh(geometry, material, NUM_FIBERS)
+    vNorm = normalize(normal*aNorm);
+    vTexCoord = uv;//*20.0;
 
-  const matrix = new Matrix4()
-  for (var i = 0; i < NUM_FIBERS; i++) {
-    randomizeMatrix(matrix)
-    mesh.setMatrixAt(i, matrix)
+    vec4 modelViewPosition = modelViewMatrix * vec4(point, 1.0);
+
+    gl_Position = projectionMatrix * modelViewPosition;
+}
+`
+
+var fragmentShader = `
+uniform float offset;
+uniform sampler2D hairMap;
+uniform sampler2D colorMap;
+uniform vec3 color;
+
+varying vec2 vTexCoord;
+varying vec3 vNorm;
+
+void main()
+{
+    // Get hair properties and color from textures.
+    vec4 hairProperties = texture2D(hairMap, vec2(vTexCoord.s, vTexCoord.t));
+    vec4 hairColor = texture2D(colorMap, vec2(vTexCoord.s, vTexCoord.t));
+
+    // Discard fragments that we shouldn't see.
+    if (hairProperties.a <= 0.0 || hairProperties.g < offset)
+    {
+        discard;
+    }
+
+    float shadow = mix(0.0, hairProperties.b * 1.2, offset);
+    vec3 light = vec3(0.1,1.0,0.3);
+    float diffuse = pow(max(0.25, dot(vNorm.xyz, light))*2.75, 1.4);
+
+    gl_FragColor = vec4(color * hairColor.xyz * diffuse * shadow, 1.1-offset);
+}
+`
+
+function prepareTexture() {
+  var canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 256
+  var context = canvas.getContext('2d')
+  if (!context) {
+    throw 'bruh'
+  }
+  for (var i = 0; i < 20000; ++i) {
+    // r = hair 1/0, g = length, b = darkness
+    context.fillStyle =
+      'rgba(255,' +
+      Math.floor(Math.random() * 255) +
+      ',' +
+      Math.floor(Math.random() * 255) +
+      ',1)'
+
+    context.fillRect(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      2,
+      2
+    )
+  }
+  return new THREE.CanvasTexture(canvas)
+}
+
+function createObjects() {
+
+  var geometry = new THREE.PlaneGeometry(1, 1, 1, 1)
+
+  const shaderTime = 0
+
+  for (let i = 0; i < NUM_LAYERS; ++i) {
+    var uniforms = {
+      color: { type: 'c', value: new THREE.Color(0xffffff) },
+      hairMap: { type: 't', value: prepareTexture() },
+      colorMap: { type: 't', value: prepareTexture() },
+      offset: { type: 'f', value: i / NUM_LAYERS  },
+      globalTime: { type: 'f', value: shaderTime },
+      gravity: { type: 'v3', value: new THREE.Vector3(0.25, -0.25, 0) },
+    }
+
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader,
+      fragmentShader,
+    })
+
+    const mesh = new THREE.Mesh(geometry, material)
+    renderer.scene.add(mesh)
   }
 
-  const h = new AxesHelper()
+  const h = new THREE.AxesHelper()
   renderer.scene.add(h)
-  renderer.scene.add(mesh)
-
-  addFloor()
 }
-
-function addFloor() {
-  var geometry = new PlaneGeometry(4, 4);
-  var material = new MeshBasicMaterial({ color: 0x80584e });
-  var plane = new Mesh(geometry, material);
-  plane.rotation.x = -Math.PI / 2;
-  plane.position.y = -0.1;
-  renderer.scene.add(plane);
-}
-
-
-const randomizeMatrix = (function () {
-  const position = new Vector3()
-  const rotation = new Euler()
-  const quaternion = new Quaternion()
-  const scale = new Vector3()
-
-  return function (matrix: Matrix4) {
-    position.x = Math.random() * 4 - 2
-    position.y = 0
-    position.z = Math.random() * 4 - 2
-
-    // rotation.x = Math.random()
-    rotation.y = Math.random() * Math.PI * 2
-    // rotation.z = Math.random()
-
-    quaternion.setFromEuler(rotation)
-
-    scale.x = scale.y = scale.z = 1
-
-    matrix.compose(position, quaternion, scale)
-  }
-})()
