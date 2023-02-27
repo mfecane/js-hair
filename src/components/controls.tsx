@@ -1,4 +1,4 @@
-import React, { SyntheticEvent } from 'react'
+import React, { SyntheticEvent, useEffect } from 'react'
 
 import './app.scss'
 import {
@@ -44,10 +44,16 @@ const Controls: React.FC = () => {
     setLightAnlge(value as number)
   }
 
-  const handleChangeSeed = (e: Event) => {
+  const handleChangeSeed = (e: InputEvent) => {
     const value = e.target.value as string
+    localStorage.setItem('seed', value)
     changeSeed(value)
   }
+
+  useEffect(()=>{
+    const seed = localStorage.getItem('seed')
+    seed && changeSeed(seed)
+  },[])
 
   return (
     <div className="app-container__right">

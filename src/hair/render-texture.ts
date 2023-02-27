@@ -5,21 +5,24 @@ import JSZip from 'jszip'
 
 let scene: THREE.Scene
 let group: THREE.Group
-let width: number = 4096
-let height: number = 4096
+let width: number = 1024
+let height: number = 1024
 let orthoCamera: THREE.OrthographicCamera
 let renderer: THREE.WebGLRenderer
 let directionalLight: THREE.DirectionalLight
 const BPP = 4
 
+//seed
+
 export const createScene = () => {
   scene = new THREE.Scene()
   group = new THREE.Group()
   scene.add(group)
-  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.05, 0.01)
+  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.15, 0.01) // why the fuck!!!
+  // this is fucking stupid
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setSize(width, height)
-  renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setPixelRatio(1.0)
 }
 
 const clearScene = () => {
@@ -56,6 +59,7 @@ export const createAlphaMap = () => {
     createScene()
     createMeshes(group, [new THREE.MeshBasicMaterial({ color: 0xffffff })])
 
+    renderer.setClearColor(0x000000)
     renderer.render(scene, orthoCamera)
     clearScene()
 
@@ -240,6 +244,7 @@ const createImage = async (pixels: Uint8Array) => {
   canvas.width = width
   canvas.height = height
   ctx.putImageData(imageData, 0, 0)
+  document.body.appendChild(canvas)
   return await new Promise<Blob>((resolve) => {
     canvas.toBlob((blob) => {
       if (!blob) throw new Error('Failed to create blob')

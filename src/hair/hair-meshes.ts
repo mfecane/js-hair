@@ -31,10 +31,10 @@ export const generateHair = (s: string = '') => {
         h: 1,
       },
       clampCount: 20,
-      density: 0.1,
-      width: 0.004,
-      variance: 0.01,
-      stray: 0.5,
+      density: 0.12,
+      width: 0.006,
+      variance: 0.012,
+      stray: 0.6,
     })
     geos = geos.concat(card1.getGeo())
 

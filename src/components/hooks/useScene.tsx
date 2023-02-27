@@ -107,11 +107,11 @@ export const StoreProvider: React.FC<IStoreProviderProps> = ({ children }) => {
     },
   }
 
-  useEffect(() => {
-    context.setLightAnlge(initialState.lightAngle)
-    context.toggleCameraState(initialState.cameraState)
-    context.changeSeed(initialState.seed)
-  }, [])
+  // useEffect(() => {
+  //   context.setLightAnlge(initialState.lightAngle)
+  //   context.toggleCameraState(initialState.cameraState)
+  //   context.changeSeed(initialState.seed)
+  // }, [])
 
   return (
     <StoreContext.Provider value={context}>{children}</StoreContext.Provider>

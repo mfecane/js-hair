@@ -73,7 +73,7 @@ const createScene = () => {
   perspCamera.position.set(0.5, 0.5, 2)
   perspCamera.lookAt(0.5, 0.5, 0)
 
-  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.1, 0.1)
+  orthoCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -0.15, 0.15)
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.shadowMap.enabled = true
