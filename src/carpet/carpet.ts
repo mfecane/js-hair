@@ -12,6 +12,11 @@ export const showCarpet = (el: HTMLElement) => {
 }
 
 const NUM_LAYERS = 100
+const cubeLayers: THREE.Mesh[] = []
+var delta: number;
+var time: number;
+var oldTime: number;
+let shaderTime = 0
 
 const vertexShader = `
 
@@ -28,9 +33,9 @@ void main()
 {
     // Calculate the effect of gravity and wind on the fur.
     vec3 displacement = gravity + vec3(
-        sin(globalTime+position.x*0.05)*0.4,
-        cos(globalTime*0.7+position.y*0.04)*0.4,
-        sin(globalTime*0.7+position.y*0.04)*0.4
+      sin(globalTime+position.x*0.05)*0.1,
+      cos(globalTime*0.7+position.y*0.04)*0.1,
+      sin(globalTime*0.7+position.y*0.04)*0.1
     );
     //displacement = vec3(0,0,0);
     vec3 aNorm = normal;
@@ -39,13 +44,13 @@ void main()
     // Calculate distance from original mesh.
     vec3 point = position.xyz + (normalize(aNorm)*offset*spacing);
     // spread outside
-    point+=vec3(position.x, position.y, 0) * 0.01 * offset;
+    point+=vec3(position.x, position.y, 0) * 0.02 * offset;
     // edge bevel
     float edge = max(abs(position.x), abs(position.y));
     point.z -= smoothstep(0.45, 0.50, edge) * offset * 0.004;
 
     vNorm = normalize(normal*aNorm);
-    vTexCoord = uv;//*20.0;
+    vTexCoord = uv;
 
     vec4 modelViewPosition = modelViewMatrix * vec4(point, 1.0);
 
@@ -64,7 +69,7 @@ varying vec3 vNorm;
 
 void main()
 {
-    vec2 uv = vTexCoord * 2.0;
+    vec2 uv = vTexCoord * 4.0;
 
     // Get hair properties and color from textures.
     vec4 hairProperties = texture2D(hairMap, vec2(uv.s, uv.t));
@@ -86,8 +91,8 @@ void main()
 
 function prepareTexture() {
   var canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 512
+  canvas.width = 256
+  canvas.height = 256
   var context = canvas.getContext('2d')
   if (!context) {
     throw 'bruh'
@@ -111,21 +116,19 @@ function prepareTexture() {
   const texture = new THREE.CanvasTexture(canvas)
   texture.wrapS = THREE.RepeatWrapping
   texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(4, 4)
+  texture.repeat.set(8, 8)
   return texture
 }
 
 function createObjects() {
   var geometry = new THREE.PlaneGeometry(1, 1, 50, 50)
 
-  const shaderTime = 0
-
-  var colorTexture = new THREE.TextureLoader().load('./texture_2.png')
-
+  var colorTexture = new THREE.TextureLoader().load('./texture_4.png')
+  const furTexture = prepareTexture() 
   for (let i = 0; i < NUM_LAYERS; ++i) {
     var uniforms = {
       color: { type: 'c', value: new THREE.Color(0xffffff) },
-      hairMap: { type: 't', value: prepareTexture() },
+      hairMap: { type: 't', value:furTexture },
       colorMap: { type: 't', value: colorTexture },
       offset: { type: 'f', value: i / NUM_LAYERS },
       globalTime: { type: 'f', value: shaderTime },
@@ -139,9 +142,26 @@ function createObjects() {
     })
 
     const mesh = new THREE.Mesh(geometry, material)
+    cubeLayers.push(mesh)
     renderer.scene.add(mesh)
+    mesh.rotateX(-Math.PI/2)
   }
 
-  const h = new THREE.AxesHelper()
-  renderer.scene.add(h)
+  // const h = new THREE.AxesHelper()
+  // renderer.scene.add(h)
+  renderer.setCallback(() => {
+    time = Date.now()
+    delta = time - oldTime
+    oldTime = time
+
+    if (isNaN(delta) || delta > 1000 || delta == 0) {
+      delta = 1000 / 60
+    }
+    shaderTime += delta * 0.005
+
+    for (var i = 0; i < cubeLayers.length; i++) {
+      const material = cubeLayers[i].material as THREE.ShaderMaterial
+      material.uniforms.globalTime.value = shaderTime
+    }
+  })
 }

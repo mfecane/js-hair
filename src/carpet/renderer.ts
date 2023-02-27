@@ -21,6 +21,7 @@ export class Renderer {
   private readonly renderer: WebGLRenderer
   private readonly composer: EffectComposer
   private lightScheme?:LightScheme
+  private callbacks:(()=>void)[] = []
 
   public constructor(private readonly root: HTMLElement) {
     this.updateSize = this.updateSize.bind(this)
@@ -89,10 +90,15 @@ export class Renderer {
   }
 
   public animate() {
-    requestAnimationFrame(this.animate)
     this.controls?.update()
     this.controls.update()
     this.composer.render()
     this.lightScheme?.update()
+    this.callbacks.forEach(callback=>callback())
+    requestAnimationFrame(this.animate)
+  }
+
+  public setCallback(arg:any) {
+    this.callbacks.push(arg)
   }
 }
