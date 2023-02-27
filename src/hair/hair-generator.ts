@@ -24,6 +24,10 @@ type Rect = {
   h: number
 }
 
+type Required<T> = {
+  [P in keyof T]-?: T[P]
+}
+
 interface HairGeneratorOptions {
   rect: Rect
   density?: number
@@ -31,30 +35,42 @@ interface HairGeneratorOptions {
   width?: number
   stray?: number
   variance?: number
+  lengthVariance?: number
 }
+
+type HairGeneratorOptionsAll = Required<HairGeneratorOptions>
 
 export class HairGenerator {
   // flatten here?
   paths: THairPath[] = []
   geos: THREE.BufferGeometry[] = []
-  rect: Rect
   MAX_ORIGINS = 1500
   variance = 0.01
-  SEGMENTS = 80
-  ELEVATION = 0.07
-  width = 0.0005
-  density = 0.5
-  clampCount = 5
-  stray = 0.3
+  SEGMENTS = 20
+  ELEVATION = 0.1
 
-  constructor(options: HairGeneratorOptions) {
-    this.rect = options.rect
+  private readonly options: HairGeneratorOptionsAll
 
-    this.density = options.density || this.density
-    this.clampCount = options.clampCount || this.clampCount
-    this.width = options.width || this.width
-    this.stray = options.stray || this.stray
-    this.variance = options.variance || this.variance
+  private static readonly DEFAULTS: HairGeneratorOptionsAll = {
+    rect: {
+      x: 0.05,
+      y: 0.95,
+      w: 0.9,
+      h: 0.9,
+    },
+    lengthVariance: 0.05,
+    variance: 0.01,
+    width: 0.0005,
+    density: 0.5,
+    clampCount: 5,
+    stray: 0.3,
+  }
+
+  public constructor(optionsParam: HairGeneratorOptions) {
+    this.options = {
+      ...HairGenerator.DEFAULTS,
+      ...optionsParam,
+    }
 
     this.createClamps()
     this.createMeshes()
@@ -72,11 +88,11 @@ export class HairGenerator {
 
     for (let i = 0; i < this.MAX_ORIGINS; i += vSteps) {
       for (let j = 0; j < vSteps; ++j) {
-        const x = this.rect.x + (this.rect.w / this.MAX_ORIGINS) * i
-        const y = this.rect.y - originShift * j - rand() * originShift
+        const x = this.options.rect.x + (this.options.rect.w / this.MAX_ORIGINS) * i
+        const y = this.options.rect.y - originShift * j - rand() * originShift
 
         let clampId: number | null = Math.floor(
-          (i / this.MAX_ORIGINS) * this.clampCount
+          (i / this.MAX_ORIGINS) * this.options.clampCount
         )
         const seed = rand()
 
@@ -87,8 +103,8 @@ export class HairGenerator {
           clampId = clampId > 0 ? clampId - 1 : clampId
         } else if (seed < 0.4 * shuffle) {
           // move down
-          clampId = clampId < this.clampCount - 1 ? clampId + 1 : clampId
-        } else if (seed < 0.4 * shuffle + 0.4 * this.stray) {
+          clampId = clampId < this.options.clampCount - 1 ? clampId + 1 : clampId
+        } else if (seed < 0.4 * shuffle + 0.4 * this.options.stray) {
           // stray
           clampId = null
         }
@@ -103,7 +119,7 @@ export class HairGenerator {
     }
 
     origins = origins.filter(() => {
-      return rand() < this.density
+      return rand() < this.options.density
     })
 
     const obj = groupBy(origins, (el: TOrigin) => {
@@ -130,7 +146,7 @@ export class HairGenerator {
       }, 0) / origins.length
     const avgZ = this.ELEVATION / 2
 
-    const baseOrigin: [number, number, number] = [avgX, this.rect.y, avgZ]
+    const baseOrigin: [number, number, number] = [avgX, this.options.rect.y, avgZ]
     const basePath = this.createPath(baseOrigin)
 
     // we want clamps lower lowering clamp control path
@@ -184,13 +200,13 @@ export class HairGenerator {
     const freq1 = rand() * 20 + 5
     const freq2 = rand() * 20 + 5
     const elev = rand() * this.ELEVATION
-    const len = this.rect.h * (0.96 - rand() * 0.4)
+    const len = this.options.rect.h * (0.96 - rand() * this.options.lengthVariance)
     const phase = rand() * 20 * Math.PI
-    const varRand = (0.5 + 0.5 * rand()) * this.variance
+    const varRand = (0.5 + 0.5 * rand()) * this.options.variance
 
     for (let i = 0; i < this.SEGMENTS; ++i) {
       const t = i / this.SEGMENTS
-      let w = this.mapWidth(t, this.width)
+      let w = this.mapWidth(t, this.options.width)
       let x = origin[0] + Math.sin(freq1 * t + phase) * varRand
       let y = origin[1] - t * len
       let z = elev + Math.sin(freq2 * t + phase) * varRand
@@ -209,14 +225,17 @@ export class HairGenerator {
     return path as THairPath
   }
 
+  // form of the hair
   mapWidth(t: number, maxWidth: number) {
-    const root = 0.1
-    if (t < root) {
-      return maxWidth * map(t, 0, root, 0.7, 1.0)
+    const rootEnd = 0.1
+    const rootWidth = 1.2
+    if (t < rootEnd) {
+      return maxWidth * map(t, 0, rootEnd, 0.7, rootWidth)
     }
-    const tip = 0.3
-    if (t > 1 - tip) {
-      return maxWidth * map(t, 1 - tip, 1, 1, 0.3)
+    const tipEnd = 0.8
+    const tipWidth = 1.2
+    if (t > 1 - tipEnd) {
+      return maxWidth * map(t, 1 - tipEnd, 1, 1, tipWidth)
     }
 
     return maxWidth
