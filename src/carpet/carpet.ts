@@ -1,4 +1,3 @@
-
 import * as THREE from 'three'
 import { Renderer } from './Renderer'
 import { ThreeLightsLightScheme } from './ThreeLightLightSceme'
@@ -12,7 +11,7 @@ export const showCarpet = (el: HTMLElement) => {
   renderer.animate()
 }
 
-const NUM_LAYERS = 20
+const NUM_LAYERS = 100
 
 const vertexShader = `
 
@@ -23,7 +22,7 @@ uniform vec3 gravity;
 varying vec2 vTexCoord;
 varying vec3 vNorm;
 
-const float spacing = 0.1;
+const float spacing = 0.02;
 
 void main()
 {
@@ -39,6 +38,11 @@ void main()
 
     // Calculate distance from original mesh.
     vec3 point = position.xyz + (normalize(aNorm)*offset*spacing);
+    // spread outside
+    point+=vec3(position.x, position.y, 0) * 0.01 * offset;
+    // edge bevel
+    float edge = max(abs(position.x), abs(position.y));
+    point.z -= smoothstep(0.45, 0.50, edge) * offset * 0.004;
 
     vNorm = normalize(normal*aNorm);
     vTexCoord = uv;//*20.0;
@@ -60,9 +64,11 @@ varying vec3 vNorm;
 
 void main()
 {
+    vec2 uv = vTexCoord * 2.0;
+
     // Get hair properties and color from textures.
-    vec4 hairProperties = texture2D(hairMap, vec2(vTexCoord.s, vTexCoord.t));
-    vec4 hairColor = texture2D(colorMap, vec2(vTexCoord.s, vTexCoord.t));
+    vec4 hairProperties = texture2D(hairMap, vec2(uv.s, uv.t));
+    vec4 hairColor = texture2D(colorMap, vec2(uv.s, uv.t));
 
     // Discard fragments that we shouldn't see.
     if (hairProperties.a <= 0.0 || hairProperties.g < offset)
@@ -80,8 +86,8 @@ void main()
 
 function prepareTexture() {
   var canvas = document.createElement('canvas')
-  canvas.width = 256
-  canvas.height = 256
+  canvas.width = 512
+  canvas.height = 512
   var context = canvas.getContext('2d')
   if (!context) {
     throw 'bruh'
@@ -102,21 +108,26 @@ function prepareTexture() {
       2
     )
   }
-  return new THREE.CanvasTexture(canvas)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(4, 4)
+  return texture
 }
 
 function createObjects() {
-
-  var geometry = new THREE.PlaneGeometry(1, 1, 1, 1)
+  var geometry = new THREE.PlaneGeometry(1, 1, 50, 50)
 
   const shaderTime = 0
+
+  var colorTexture = new THREE.TextureLoader().load('./texture_2.png')
 
   for (let i = 0; i < NUM_LAYERS; ++i) {
     var uniforms = {
       color: { type: 'c', value: new THREE.Color(0xffffff) },
       hairMap: { type: 't', value: prepareTexture() },
-      colorMap: { type: 't', value: prepareTexture() },
-      offset: { type: 'f', value: i / NUM_LAYERS  },
+      colorMap: { type: 't', value: colorTexture },
+      offset: { type: 'f', value: i / NUM_LAYERS },
       globalTime: { type: 'f', value: shaderTime },
       gravity: { type: 'v3', value: new THREE.Vector3(0.25, -0.25, 0) },
     }
