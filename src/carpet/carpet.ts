@@ -11,7 +11,7 @@ export const showCarpet = (el: HTMLElement) => {
   renderer.animate()
 }
 
-const NUM_LAYERS = 100
+const NUM_LAYERS = 40
 const cubeLayers: THREE.Mesh[] = []
 var delta: number;
 var time: number;
@@ -32,7 +32,7 @@ const float spacing = 0.02;
 void main()
 {
     // Calculate the effect of gravity and wind on the fur.
-    vec3 displacement = gravity + vec3(
+    vec3 displacement = vec3(
       sin(globalTime+position.x*0.05)*0.1,
       cos(globalTime*0.7+position.y*0.04)*0.1,
       sin(globalTime*0.7+position.y*0.04)*0.1
@@ -69,7 +69,7 @@ varying vec3 vNorm;
 
 void main()
 {
-    vec2 uv = vTexCoord * 4.0;
+    vec2 uv = vTexCoord * 2.0;
 
     // Get hair properties and color from textures.
     vec4 hairProperties = texture2D(hairMap, vec2(uv.s, uv.t));
@@ -123,7 +123,7 @@ function prepareTexture() {
 function createObjects() {
   var geometry = new THREE.PlaneGeometry(1, 1, 50, 50)
 
-  var colorTexture = new THREE.TextureLoader().load('./texture_4.png')
+  var colorTexture = new THREE.TextureLoader().load('./texture_2.png')
   const furTexture = prepareTexture() 
   for (let i = 0; i < NUM_LAYERS; ++i) {
     var uniforms = {

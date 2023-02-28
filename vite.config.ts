@@ -15,4 +15,7 @@ export default defineConfig({
       css: path.resolve(__dirname, 'src/css'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000
+  }
 })
