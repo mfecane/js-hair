@@ -20,13 +20,12 @@ export class Renderer {
   private readonly controls: OrbitControls
   private readonly renderer: WebGLRenderer
   private readonly composer: EffectComposer
-  private lightScheme?:LightScheme
-  private callbacks:(()=>void)[] = []
+  private lightScheme?: LightScheme
+  private callbacks: (() => void)[] = []
 
   public constructor(private readonly root: HTMLElement) {
     this.updateSize = this.updateSize.bind(this)
     this.animate = this.animate.bind(this)
-
 
     this.scene = new Scene()
     const group = new Group()
@@ -42,11 +41,16 @@ export class Renderer {
     }
 
     {
-      this.perspCamera = new PerspectiveCamera(45, this.width / this.height, 0.1, 1000)
+      this.perspCamera = new PerspectiveCamera(
+        45,
+        this.width / this.height,
+        0.1,
+        1000
+      )
       this.perspCamera.position.set(0.5, 0.5, 2)
       this.perspCamera.lookAt(0.5, 0.5, 0)
     }
-    
+
     this.updateSize()
 
     {
@@ -60,21 +64,21 @@ export class Renderer {
         this.perspCamera,
         this.renderer.domElement
       )
-      this.controls.minDistance = 1
-      this.controls.maxDistance = 10
-      this.controls.zoomO = 10
+      this.controls.minDistance = 4
+      this.controls.maxDistance = 12
+      this.controls.maxPolarAngle = (7 * Math.PI) / 16
       this.controls.target.set(0, 0, 0)
       this.controls.enableDamping = true
       this.controls.zoomSpeed = 0.5
     }
-    
+
     window.addEventListener('resize', this.updateSize)
 
     this.root.appendChild(this.renderer.domElement)
   }
 
   public addLightScheme(lightScheme: LightScheme) {
-    this.lightScheme = lightScheme 
+    this.lightScheme = lightScheme
   }
 
   private updateSize() {
@@ -94,11 +98,11 @@ export class Renderer {
     this.controls.update()
     this.composer.render()
     this.lightScheme?.update()
-    this.callbacks.forEach(callback=>callback())
+    this.callbacks.forEach((callback) => callback())
     requestAnimationFrame(this.animate)
   }
 
-  public setCallback(arg:any) {
+  public setCallback(arg: any) {
     this.callbacks.push(arg)
   }
 }

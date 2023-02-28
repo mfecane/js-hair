@@ -5,14 +5,16 @@ import { HairCurve } from './ExtrudedMeshGenerator'
 
 export class CurveGenerator {
   private readonly LENGTH = 0.3
+  private readonly VARIANCE = Math.PI * 0.5
+  private readonly SEGMENTS = 10.0
 
-  constructor(private readonly segments: number) {}
+  constructor() {}
 
   public generateCurve(x: number, z: number): HairCurve {
     const points: HairCurve = []
     let dir = new Vector3(0, 1, 0)
     let point = new Vector3(x, 0, z)
-    for (let i = 0; i < this.segments; ++i) {
+    for (let i = 0; i < this.SEGMENTS; ++i) {
       points.push({
         pos: vector3ToTuple(point),
         width: this.getWidth(i),
@@ -23,24 +25,31 @@ export class CurveGenerator {
     return points
   }
 
-  private changeDir(dir: Vector3): Vector3 {
-    const dirChange = new Vector3(Math.random() - 0.5, 0, Math.random() - 0.5)
-    return dir.add(dirChange).normalize()
+  private changeDir(dir: Vector3): void {
+    dir.normalize()
+    dir.applyAxisAngle(
+      new Vector3(1, 0, 0),
+      this.VARIANCE * (Math.random() - 0.5)
+    )
+    dir.applyAxisAngle(
+      new Vector3(0, 0, 1),
+      this.VARIANCE * (Math.random() - 0.5)
+    )
   }
 
   private getWidth(index: number): number {
-    const cureveParameter = index / this.segments
-    const reduce = mapclamp(cureveParameter, 0.6, 1.0, 0, 0.015)
-    return 0.02 - reduce
+    const cureveParameter = index / this.SEGMENTS
+    const reduce = mapclamp(cureveParameter, 0.6, 1.0, 0, 0.008)
+    return 0.01 - reduce
   }
 
   private getStep(idnex: number): number {
     return mapclamp(
       idnex,
       0,
-      this.segments,
-      this.LENGTH / this.segments,
-      this.LENGTH / this.segments / 2
+      this.SEGMENTS,
+      this.LENGTH / this.SEGMENTS,
+      this.LENGTH / this.SEGMENTS / 2
     )
   }
 }

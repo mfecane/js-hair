@@ -21,15 +21,15 @@ export class CurvesGenerator {
 
   public constructor(options?: Partial<Options>) {
     this.options = {
-      minx: -1,
-      miny: -1,
-      maxx: 1,
-      maxy: 1,
-      sizex: 0.05,
-      sizey: 0.05,
+      minx: -2,
+      miny: -2,
+      maxx: 2,
+      maxy: 2,
+      sizex: 0.02,
+      sizey: 0.02,
       ...options,
     }
-    this.curveGenerator = new CurveGenerator(8)
+    this.curveGenerator = new CurveGenerator()
   }
 
   private createOrigins(): Point[] {
@@ -41,10 +41,7 @@ export class CurvesGenerator {
         let newy = y + (Math.random() - 0.5) * sizey * 0.5
         newx = newx < minx ? minx : newx > maxx ? maxx : newx
         newy = newy < miny ? miny : newy > maxy ? maxy : newy
-        curves.push([
-            newx,
-            newy
-        ])
+        curves.push([newx, newy])
       }
     }
     return curves
