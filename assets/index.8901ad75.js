@@ -3603,6 +3603,6 @@ void main()	{
     float spiral = abs(abs(scaledUv.x + scaledUv.y) - 0.5);
     spiral = smoothstep(0.0, 0.5, spiral);
     texelColor *= (0.2 + vOffset * 0.8) * (0.6 + 0.4 * spiral);
-    gl_FragColor = vec4(texelColor.xyz , 1.0);
+    gl_FragColor = vec4(texelColor.xyz* 1.5 , 1.0);
 }
-`;function zX(){const t=new dE,e=new DX,n=t.crateCurves();e.createFromCurves(n);const r=e.getBufferGeometry(),i=new jz().load("./texture_2.png");console.log("bufferGeomertry",r);const s=new j2({uniforms:{sampler:{value:i}},vertexShader:FX,fragmentShader:OX,side:$s,transparent:!0}),o=new qr(r,s);Sc.scene.add(o)}const BX=3;switch(BX){case 1:MT(document.querySelector("#app")).render(Le(kX,{}));break;case 2:const e=document.createElement("div");e.style.width=window.innerWidth+"px",e.style.height=window.innerHeight+"px",document.body.appendChild(e),$6(e);break;case 3:NX();break}
+`;function zX(){const t=new dE,e=new DX,n=t.crateCurves();e.createFromCurves(n);const r=e.getBufferGeometry(),i=new jz().load("./texture_light.png");console.log("bufferGeomertry",r);const s=new j2({uniforms:{sampler:{value:i}},vertexShader:FX,fragmentShader:OX,side:$s,transparent:!0}),o=new qr(r,s);Sc.scene.add(o)}const BX=3;switch(BX){case 1:MT(document.querySelector("#app")).render(Le(kX,{}));break;case 2:const e=document.createElement("div");e.style.width=window.innerWidth+"px",e.style.height=window.innerHeight+"px",document.body.appendChild(e),$6(e);break;case 3:NX();break}
