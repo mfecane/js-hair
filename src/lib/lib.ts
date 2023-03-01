@@ -43,7 +43,7 @@ export function hexToRgb(hex: string): string {
   return r + ',' + g + ',' + b
 }
 
-export function dist(a, b) {
+export function dist(a: any, b: any) {
   return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2))
 }
 

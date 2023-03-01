@@ -1,5 +1,5 @@
 import { DirectionalLight, Scene } from 'three'
-import { LightScheme } from './LightScheme'
+import { LightScheme } from '../instanced/LightScheme'
 import { Renderer } from './Renderer'
 
 export class ThreeLightsLightScheme implements LightScheme {
@@ -38,7 +38,5 @@ export class ThreeLightsLightScheme implements LightScheme {
     this.renderer.addLightScheme(this)
   }
 
-  public update() {
-
-  }
+  public update() {}
 }

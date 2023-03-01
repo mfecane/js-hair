@@ -1,22 +1,14 @@
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import {
-  Group,
-  PCFSoftShadowMap,
-  PerspectiveCamera,
-  Scene,
-  WebGLRenderer,
-} from 'three'
+import { Group, PerspectiveCamera, Scene, WebGLRenderer } from 'three'
 import { LightScheme } from './LightScheme'
-import { useThemeWithoutDefault } from '@mui/system'
 
 export class Renderer {
   public readonly scene: THREE.Scene
   private readonly perspCamera: THREE.PerspectiveCamera
   private width = 10
   private height = 10
-  private readonly shadowSize = 0.6
   private readonly controls: OrbitControls
   private readonly renderer: WebGLRenderer
   private readonly composer: EffectComposer
@@ -64,9 +56,9 @@ export class Renderer {
         this.perspCamera,
         this.renderer.domElement
       )
-      this.controls.minDistance = 4
+      this.controls.minDistance = 2
       this.controls.maxDistance = 12
-      this.controls.maxPolarAngle = (7 * Math.PI) / 16
+      // this.controls.maxPolarAngle = (7 * Math.PI) / 16
       this.controls.target.set(0, 0, 0)
       this.controls.enableDamping = true
       this.controls.zoomSpeed = 0.5
@@ -99,6 +91,8 @@ export class Renderer {
     this.composer.render()
     this.lightScheme?.update()
     this.callbacks.forEach((callback) => callback())
+    const drawCalls = this.renderer.info.render.calls
+    console.log(`Number of draw calls per frame: ${drawCalls}`)
     requestAnimationFrame(this.animate)
   }
 

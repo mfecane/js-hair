@@ -1,7 +1,7 @@
 import { mapclamp } from 'src/lib/lib'
 import { vector3ToTuple } from 'src/lib/three-helpers'
 import { Vector3 } from 'three'
-import { HairCurve } from './ExtrudedMeshGenerator'
+import { FiberCurve } from './ExtrudedMeshGenerator'
 
 export class CurveGenerator {
   private readonly LENGTH = 0.3
@@ -10,13 +10,13 @@ export class CurveGenerator {
 
   constructor() {}
 
-  public generateCurve(x: number, z: number): HairCurve {
-    const points: HairCurve = []
+  public generateCurve(): FiberCurve {
+    const points: FiberCurve = []
     let dir = new Vector3(0, 1, 0)
-    let point = new Vector3(x, 0, z)
+    let point = new Vector3(0, 0, 0)
     for (let i = 0; i < this.SEGMENTS; ++i) {
       points.push({
-        pos: vector3ToTuple(point),
+        position: vector3ToTuple(point),
         width: this.getWidth(i),
       })
       point.add(dir.clone().multiplyScalar(this.getStep(i)))
