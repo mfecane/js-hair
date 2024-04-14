@@ -22,7 +22,7 @@ export const generateHair = (s: string = '') => {
   return new Promise((resolve) => {
     let geos: THREE.BufferGeometry[] = []
     resetRand(s)
-
+    
     let card1 = new HairGenerator({
       rect: {
         x: 0.015,
@@ -75,7 +75,7 @@ export const generateHair = (s: string = '') => {
         w: 0.05,
         h: 1,
       },
-      variance: 0.02,
+      variance: 0.008,
       density: 0.05,
     })
     geos = geos.concat(card5.getGeo())
