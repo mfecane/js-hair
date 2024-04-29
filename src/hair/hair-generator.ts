@@ -3,6 +3,7 @@ import { rand } from 'src/lib/random'
 import { IWeightProvider, Ramp1, WidthProfile } from './ramps'
 import { createGeo } from './create-geo'
 import { BufferGeometry } from 'three'
+import { makeClumps } from './modifiers/clumping'
 
 // TODO ::: add createSpline
 
@@ -236,6 +237,8 @@ export class HairGenerator {
 			})
 			.filter((cl) => !!cl) // ?
 			.flat()
+
+		makeClumps(this.paths, 5)
 
 		// clumpPaths(this.paths, new Ramp1(0.1, 0.9, 0.6, 1.0))
 	}
